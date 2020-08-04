@@ -1,0 +1,12 @@
+dependencyManagement: 一般用于项目的父 pom 中
+
+dependencyManagement 只是声明依赖，并不实际引用，todo 子 module 中需要显示地声明需要的依赖
+    如果子 module 中没有声明依赖，是不会从父项目中继承的；只有在子 module 中声明需要的依赖，并且没有指定 version 和 scope ，才会从父项目中继承这两项
+    todo 如果子 module 中指定了版本号，那么使用子 module 中的版本号
+
+
+
+
+
+
+

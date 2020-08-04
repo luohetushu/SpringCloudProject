@@ -1,0 +1,23 @@
+# 服务端口号
+server:
+  port: 7002
+
+# 应用名: 注册中心
+spring:
+  application:
+    name: cloud-eureka-server7002
+
+# 注册中心集群，注册配置，需要一个注册中心相互注册其他注册中心的地址
+eureka:
+  instance:
+    # eureka 服务端的实例名称
+    hostname: eureka7002.com
+  client:
+    # 禁用应用主类的客户端注册行为
+    # 是否向服务注册中心注册自己
+    register-with-eureka: false
+    # 注册中心是维护服务，而不是检索服务
+    fetch-registry: false
+    # 注册中心地址，用于查询服务与注册服务
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka/, http://eureka7003.com:7003/eureka/

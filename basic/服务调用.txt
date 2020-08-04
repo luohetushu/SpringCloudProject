@@ -1,0 +1,168 @@
+服务调用：负载均衡 + RestTemplate 调用
+    一般是客户端（服务消费者）调用服务端（服务提供者）的接口方法，
+    或者是客户端（服务消费者|服务提供者）查询服务注册中心注册的服务信息的行为
+
+
+使用的工具：
+一、调用：RestTemplate
+   RestTemple 提供了多种便捷访问远程 Http 服务的方法，
+       是一种简单便捷的访问 restful 服务模版类，是 Spring 提供的用于访问 Rest 服务的客户端模版工具类
+   常见使用方式：客户端调用服务端的接口方法：
+   Post 请求
+       @Nullable
+       public <T> T postForObject(String url, @Nullable Object request, Class<T> responseType, Object... uriVariables)
+                                   throws RestClientException {
+           RequestCallback requestCallback = this.httpEntityCallback(request, responseType);
+           HttpMessageConverterExtractor<T> responseExtractor = new HttpMessageConverterExtractor(responseType,
+                                   this.getMessageConverters(), this.logger);
+           return this.execute(url, HttpMethod.POST, requestCallback, responseExtractor, (Object[])uriVariables);
+       }
+           url：Rest  请求地址，一般为服务器端的接口地址
+           request：请求参数
+           responseType：Http 响应返回的对象类型
+       public <T> ResponseEntity<T> postForEntity(URI url, @Nullable Object request, Class<T> responseType)
+                                   throws RestClientException {
+           RequestCallback requestCallback = this.httpEntityCallback(request, responseType);
+           ResponseExtractor<ResponseEntity<T>> responseExtractor = this.responseEntityExtractor(responseType);
+           return (ResponseEntity)nonNull(this.execute(url, HttpMethod.POST, requestCallback, responseExtractor));
+       }
+   Get 请求：
+       @Nullable
+       public <T> T getForObject(URI url, Class<T> responseType) throws RestClientException {
+           RequestCallback requestCallback = this.acceptHeaderRequestCallback(responseType);
+           HttpMessageConverterExtractor<T> responseExtractor = new HttpMessageConverterExtractor(responseType,
+                                    this.getMessageConverters(), this.logger);
+           return this.execute(url, HttpMethod.GET, requestCallback, responseExtractor);
+       }
+       public <T> ResponseEntity<T> getForEntity(String url, Class<T> responseType, Object... uriVariables)
+                                    throws RestClientException {
+           RequestCallback requestCallback = this.acceptHeaderRequestCallback(responseType);
+           ResponseExtractor<ResponseEntity<T>> responseExtractor = this.responseEntityExtractor(responseType);
+           return (ResponseEntity)nonNull(this.execute(url, HttpMethod.GET, requestCallback, responseExtractor, uriVariables));
+       }
+   ForObject：返回对象为响应体中数据转化成的对象，即我们用来返回给客户端请求的返回数据类型，一般转化成 json
+   ForEntity：返回对象为ResponseEntity对象，包含了响应中的重要信息，如：响应头、响应状态码、响应体等
+
+二、负载均衡：Spring Cloud Ribbon
+   用于客户端的负载均衡的工具，提供客户端的软件负载均衡算法和服务调用
+   就是一个软负载均衡的客户端组件，可以和所需请求的客户端结合使用
+   Nginx 服务端负载均衡：客户端所有请求都会交给 nginx，由 nginx 实现转发请求，即负载均衡是服务端实现的
+   Ribbon 本地负载均衡，在调用微服务接口时，会在注册中心上获取注册信息服务列表后缓存到 JVM 本地，从而在本地实现 RPC 远程服务调用技术
+   负载均衡：将用户的请求平摊地分配到多个服务上，从而达到系统的HA（高可用）
+       分集中式LB：在服务消费方与服务提供方之间使用独立的 LB 设施，由该设施将访问请求通过某种策略转发至服务的提供方
+        进程内LB：将LB逻辑集成到消费方，消费方型服务注册中心获知服务地址，然后从地址中选出合适的服务提供方的地址
+   Ribbon 属于进程内 LB
+   todo Ribbon 核心组件 IRule：根据特定算法，从服务列表中选取一个要访问的服务
+   com.netflix.loadbalancer.IRule:
+       public interface IRule {
+           Server choose(Object var1);   // 根据特定算法，从服务列表中选取一个要访问的服务
+           void setLoadBalancer(ILoadBalancer var1);
+           ILoadBalancer getLoadBalancer();
+       }
+   负载均衡规则基类：com.netflix.loadbalancer.AbstractLoadBalancerRule    // 自定义均衡规则或 Ribbon 规则均继承此类
+       public abstract class AbstractLoadBalancerRule implements IRule, IClientConfigAware {
+           private ILoadBalancer lb;
+           public AbstractLoadBalancerRule() {}
+           public void setLoadBalancer(ILoadBalancer lb) {this.lb = lb;}
+           public ILoadBalancer getLoadBalancer() {return this.lb;}
+       }
+       子类：com.netflix.loadbalancer.ClientConfigEnabledRoundRobinRule
+                com.netflix.loadbalancer.BestAvailableRule   // 先过滤掉处于断路器跳闸状态的服务，选择一个可用的并发量最低的服务
+                com.netflix.loadbalancer.PredicateBasedRule
+            com.netflix.loadbalancer.RoundRobinRule  // todo 默认轮询
+                com.netflix.loadbalancer.WeightedResponseTimeRule  // 对 RoundRobinRule 的扩展，响应速度越快的实例选择权重越大，越容易被选择
+                com.netflix.loadbalancer.ResponseTimeWeightedRule
+            com.netflix.loadbalancer.RandomRule  // 随机
+            com.netflix.loadbalancer.RetryRule   // 先按照 RoundRobinRule 策略获取服务，
+                                                 如果获取失败则在指定时间内进行重试
+   替换或者自定义规则，todo 规则组件所在的配置类不能在 @ComponentScan 能扫描到的包下，否则该配置类会被所有的Ribbon客户端所共享，达不到特殊化定制的目的
+      同时在应用主类上添加注解：@RibbonClient(name = "CLOUD.PROVIDER.PAYMENT-SERVICE", configuration = MyRuleConfig.class)
+      name ：为查询的应用服务名
+      configuration：为自定义的规则配置类
+   todo 轮询负载均衡算法：
+      rest 接口第几次请求数 % 服务器集群总数量 = 实际调用服务器位置下标  // 每次服务重启后rest 接口计数从 1 开始
+      // 查询指定服务名
+      List<ServiceInstance> instances = discoveryClient.getInstances("CLOUD.PROVIDER.PAYMENT-SERVICE");
+      根据计算得出的下标 index，来指定调用的服务器 instances.get(index)
+三、Ribbon 替换方案：Load Balancer
+
+
+
+服务调用2：
+Feign ：一个声明式 WebService 客户端
+       使用方法：定义一个服务接口然后在上面添加注解
+Ribbon + RestTemplate 利用 RestTemplate 对 Http 请求的封装处理，形成了一套模版化的调用方法。
+       但实际中，对服务依赖的调用往往被多处调用，为了简化 Http 客户端的请求调用，
+       todo 针对每个微服务自行封装一些客户端类来包装这些依赖服务的调用，Feign 就是用来做这个的
+Feign 集成了 ribbon，只需创建一个接口并使用注解的方式来配置，即可完成对服务提供方的接口绑定
+
+Feign 和 OpenFeign 的区别：
+Feign是Spring Cloud组件中的一个轻量级RESTful的HTTP服务客户端
+     内置了Ribbon，用来做客户端负载均衡，去调用服务注册中心的服务。
+     使用方式：使用Feign的注解定义接口，调用这个接口，就可以调用服务注册中心的服务
+     本身不支持Spring MVC的注解，它有一套自己的注解
+OpenFeign 是Spring Cloud 在Feign的基础上支持了Spring MVC的注解，如@RequesMapping等等。
+     @FeignClient 可以解析SpringMVC的@RequestMapping注解下的接口，并通过动态代理的方式产生实现类，实现类中做负载均衡并调用其他服务
+     todo 自带负载均衡配置
+OpenFeign 超时控制：
+    如果 feign 客户端超时等待时间(一般默认等待1秒)小于服务提供者处理请求的时间，那么客户端在请求的时候会报错：todo Read timed out executing
+    所以我们需要控制一下超时时间，在主配置文件中开启超时控制：
+       # 建立连接所用时间
+       feign.client.config.default.connect-timeout=20000
+       # 建立连接后从服务器读取到可用资源所用的时间
+       feign.client.config.default.read-timeout=20000
+OpenFeign 日志：
+    对 feign 接口的调用情况进行监控和输出
+    日志级别：NONE： 默认的，不显示任何日志
+             BASIC： 仅记录请求方法、URL、响应状态码以及执行时间
+             HEADERS：除了BASIC 中自定义的信息外，还有请求和响应的信息头
+             FULL： 除了HEADERS中定义的信息外， 还有请求和响应的正文以及元数据
+
+
+todo 使用：
+1、cloud-consumer-feign-order80 作为客户端（服务消费者）使用 openfeign 进行服务调用
+   <!--使用 OpenFeign 进行服务调用-->
+   <dependency>
+       <groupId>org.springframework.cloud</groupId>
+       <artifactId>spring-cloud-starter-openfeign</artifactId>
+   </dependency>
+   todo @EnableFeignClients  开启 Feign 使用
+2、定义一个服务接口，@FeignClient 注解
+   @Component
+   @FeignClient(value = "cloud-provider-payment-service")  // 要调用的服务集群名
+   public interface PaymentFeignService {
+       @PostMapping("/payment8001/insert")
+       CommonResult<PaymentEntity> insertPayment(@RequestBody PaymentEntity payment);
+       @GetMapping("/payment8001/query/{id}")
+       CommonResult<PaymentEntity> getPaymentById(@PathVariable("id") long id);
+   }
+3、编写控制类调用
+4、todo 在配置文件中指定服务提供者的地址：服务集群名.ribbon.listOfServers=服务提供者的地址1, 服务提供者的地址2 ...
+   cloud-provider-payment-service.ribbon.listOfServers=http://localhost:8001, http://localhost:8002
+4.5、给服务接口添加对应的发生服务降级时的"兜底方法"：
+   编写兜底方法类，实现该服务接口：todo 实现的方法就是对应接口的兜底方法
+       @Component
+       public class PaymentFeignServiceFallback implements PaymentFeignService{...}
+   在服务接口上指定该兜底方法类：
+       @Component
+       @FeignClient(value = "cloud.provider.payment-service", fallback = )  // 要调用的服务集群名
+       public interface PaymentFeignService
+5、在主配置文件中开启超时控制：
+   # 建立连接所用时间
+   feign.client.config.default.connect-timeout=20000
+   # 建立连接后从服务器读取到可用资源所用的时间
+   feign.client.config.default.read-timeout=20000
+6、进行 feign 日志配置：对 feign 接口的调用情况进行监控和输出
+       @Configuration
+       public class FeignConfig {
+           // 添加 feign 日志组件
+           @Bean
+           Logger.Level feignLoggerLevel(){
+               return Logger.Level.FULL;
+           }
+       }
+   并在主配置文件中开启日志：
+   logging.level.com.springcloud.project=debug  # 以 debug 级别及以上级别打印指定包名下的日志信息
+   logging.level.com.springcloud.project.service.PaymentFeignService=debug  # feign 日志以什么级别监控哪个接口
+
+

@@ -1,0 +1,45 @@
+解决的痛点：在微服务框架中，一个由客户端发起的请求在后端系统中会经过多个不同的服务节点调用来协同产生最后的请求结果。
+          每一个前段的请求都会形成一条复杂的分布式服务调用链路，链路中的任何一个环节出现高延时或错误都会引起整个请求最后的失败，
+          todo 所以需要有链路监听、跟踪机制
+
+String Cloud Sleuth: 分布式链路跟踪
+    提供一套完整的服务跟踪的解决方案，
+    在分布式系统中提供追踪解决方案并兼容支持 zipkin
+
+完整的请求链路：
+    一条链路通过 TraceId 唯一标识，Span 标识发起的请求信息，各 Span 通过 parent id 关联起来
+                                                      spanId=C,parentId=B --> spanId=D,parentId=C
+   spanId=A,parentId=null --> spanId=B,parentId=A -->
+                                                      spanId=F,parentId=B --> spanId=G,parentId=F
+   Trace : 类似于树结构的 Span 集合，表示一条调用链路，存在唯一标识
+   Span：表示调用链路来源，一个 span 就是一次请求信息
+
+Sleuth 之 zipkin
+1、搭建安装：后台执行 jar 包
+   进入 jar 所在目录，命令执行：java -jar zipkin-server.2.12.9-exec.jar
+2、打开可视化界面：http://localhost:9411/zipkin/
+3、服务提供者：cloud-provider-payment8001
+  服务消费者：cloud-consumer-order80，添加 sleuth + zipkin
+   1）、依赖：
+        <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-zipkin -->
+        <!--依赖 sleuth + zipkin-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-zipkin</artifactId>
+        </dependency>
+   2）、配置文件配置：
+       spring：
+         # 配置链路跟踪
+         zipkin:
+           base-url: http://localhost:9411/   # 链路跟踪可视化地址
+         # 配置 sleuth
+         sleuth:
+           sampler:
+             # 采样率，取值 0～1 之间，1 表示全采集
+             probability: 1
+
+
+
+
+
+

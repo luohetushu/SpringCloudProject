@@ -1,0 +1,79 @@
+1、首先创建微服务 cloud 整体聚合父工程 project
+   Maven 方式
+   设置字符编码：
+       Preferences... -> Editor: File Encodings -> Global Encoding: UTF-8
+                                                   Project Encoding: UTF-8
+                                                   Default encoding for properties files: UTF-8 Transparent native-to-ascii conversion
+   注解生效激活：
+       Preferences... -> Build, Execution... : Annotation Processors -> Default : Enable annotation procession
+   File Type 过滤：
+       Preferences... -> Editor: File Types -> ...
+
+   父项目 maven 中跳过单元测试：
+       右侧 Maven：选定本项目，点击"闪电"样式按钮：toggle 'Skip Tests' Mode
+
+   开启 Run DashBoard：View -> Tool Windows -> Services
+       需要在当前项目的 .idea 文件夹下的 workspace.xml 中添加如下配置：
+         <component name="RunDashboard">
+           <option name="configurationTypes">
+             <set>
+               <option value="SpringBootApplicationConfigurationType" />
+             </set>
+           </option>
+         </component>
+
+
+   todo 在父项目中一般用来声明通用的依赖，<dependencyManagement>...</dependencyManagement>
+
+
+2、创建子 modules：
+1）、服务端：支付模块：cloud-provider-payment8001
+2) 、客户端：订单模块：cloud-consumer-order80
+3）、工程重构，创建通用模块：cloud-api-common：放置各 module 中重复的内容，如实体类；与公用的模块，如第三方 api
+    抽离之后，将通用模块使用 maven 命令 clean 、install
+    然后在各 module 中 pom 添加如下依赖：
+        <!-- 引用自己定义的api通用模块 -->
+        <dependency>
+            <groupId>com.springcloud.project</groupId>
+            <artifactId>cloud-api-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+4）、服务治理：
+  1、使用 Eureka 实现
+     服务注册中心集群：cloud-eureka-server7001     // 高可用实现
+                     cloud-eureka-server7002
+                     cloud-eureka-server7003
+     客户端：多服务提供者集群：cloud-provider-payment8001
+                           cloud-provider-payment8001
+     客户端：消费者：cloud-consumer-order80
+  2、使用 Zookeeper 实现
+     服务注册中心：Client port found: 2181. Client address: localhost.  // 127.0.0.1:2181
+        通过命令端口启动：./zkServer.sh start  #启动zookeeper
+        并连接：./zkCli.sh -server 127.0.0.1:2181
+     客户端：服务提供者: cloud-provider-payment8004
+     客户端：服务消费者：cloud-consumer-zk-order80
+  3、使用 Consul 实现
+     服务注册中心：
+        通过命令端口启动：consul agent -dev
+        图形界面：http://localhost:8500
+     客户端：服务提供者: cloud-provider-payment8004
+     客户端：服务消费者：cloud-consumer-consul-order80
+5）、服务调用
+   1、使用 Robbin 实现负载均衡：默认轮询规则
+      todo Eureka Client 依赖默认包含 Robbin 依赖
+   2、使用 OpenFeign 进行服务调用：客户端：订单模块：cloud-consumer-feign-order80
+6）、服务降级与熔断：使用 Hystrix 开源库
+   服务端：支付模块：cloud-provider-hystrix-payment8001：使用 hystrix 进行服务降级与服务熔断
+   客户端：订单模块：cloud-consumer-feign-hystrix-order80: 使用 OpenFeign 进行服务调用，使用 hystrix 进行服务降级与服务熔断
+7）、图形化 Hystrix Dashboard 搭建
+   客户端：仪表盘9001：cloud-consumer-hystrix-dashboard9001
+8）、服务网关：网关模块：cloud-gateway-gateway9527
+9）、配置中心模块：服务端：cloud-config-center3344：用于连接管理远程仓库
+    配置中心模块：客户端：cloud-config-client3355：
+                客户端：cloud-config-client3366：
+10）、使用消息总线实现分布式配置的自动刷新
+11）、消息驱动：
+     消息提供者：cloud-stream-rabbitmq-provider8801
+     消息消费者：cloud-stream-rabbitmq-consumer8802
+     消息消费者：cloud-stream-rabbitmq-consumer8803
+

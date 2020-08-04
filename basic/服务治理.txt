@@ -1,0 +1,150 @@
+服务治理：管理服务与服务之间的依赖关系，可以实现服务调用、负载均衡、容错等，实现服务发现与注册
+
+
+todo 微服务RPC远程调用最核心的是？
+     高可用，实现方法：搭建注册中心集群，实现负载均衡+故障容错
+
+实现技术：
+一、Eureka
+    Eureka 采用 CS 设计架构，Eureka Server 作为服务注册功能的服务器，是服务注册中心。
+
+    Eureka 组件：
+    Eureka Server：提供服务注册服务  @EnableEurekaServer
+        各个微服务节点通过配置启动后，会在EurekaServer中进行注册
+    EurekaClient：通过注册中心进行访问
+        一个 java 客户端，客户端具备一个内置的、使用轮询（rounf-robin）负载算法的负载均衡器。
+        当应用启动后，将会向 Eureka Server 发送心跳（默认周期30秒）。
+        如果Eureka Server 在多个心跳周期内没有接收到某个节点的心跳，Eureka Server将会从服务注册中心将该服务节点移除（默认90秒）
+    自我保护机制：
+        保护模式主要用于一组客户端和eureka server之间存在网络分区场景下的保护。
+        一旦进入保护模式，eureka server 将会尝试保护其服务注册表中的信息，不再删除服务注册表中的数据，即不会注销任何微服务
+        常见显示：
+            EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEY'RE NOT.
+            RENEWALS ARE LESSER THAN THRESHOLD AND HENCE THE INSTANCES ARE NOT BEING EXPIRED JUST TO BE SAFE.
+        自我保护机制默认开启：eureka.server.enable-self-preservation=true
+        Eureka 服务端（注册中心）移除间隔时间：
+            eureka.server.eviction-interval-timer-in-ms=90000    # 该时间内没有接收到某个节点的心跳，则移除
+        Eureka 客户端向服务端发送心跳时间间隔，单位为秒，默认30秒
+            eureka.instance.lease-renewal-interval-in-seconds=30
+        Eureka 服务端在收到最后一次心跳等待时间上限，单位为秒，默认90秒，超时将移除服务
+            eureka.instance.lease-expiration-duration-in-seconds=90
+
+
+    服务中心：@EnableEurekaServer 服务注册中心
+    服务发现：@EnableDiscoveryClient 客户端获取在注册中心注册的其他微服务信息
+
+    1、使用 Eureka 创建注册中心：cloud-eureka-server7001
+         <!--服务治理框架一：Spring Cloud Eureka-->
+         <dependency>
+             <groupId>org.springframework.cloud</groupId>
+             <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+         </dependency>
+         todo @EnableEurekaServer
+    2、将 cloud-provider-payment8001 作为服务提供者注册进注册中心
+         <!--服务治理：客户端：服务提供者Eureka Client-->
+         <dependency>
+             <groupId>org.springframework.cloud</groupId>
+             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+         </dependency>
+         todo @EnableEurekaClient
+    3、将 cloud-consumer-order80 作为服务消费者注册进注册中心
+         <!--服务治理：客户端：服务消费者Eureka Client-->
+         <dependency>
+             <groupId>org.springframework.cloud</groupId>
+             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+         </dependency>
+         todo @EnableEurekaClient
+    5）、微服务RPC远程调用最核心的是？
+        高可用，实现方法：搭建注册中心集群，实现负载均衡+故障容错
+        todo 需要修改映射文件：/etc/hosts
+             ############SpringCloudProject20200723##################
+             127.0.0.1	eureka7001.com
+             127.0.0.1	eureka7002.com
+             127.0.0.1	eureka7003.com
+        <!--高可用，实现方法：搭建注册中心集群，实现负载均衡+故障容错-->
+        <!--使用 Eureka 创建注册中心1：cloud-eureka-server7001-->
+        <module>cloud-eureka-server7001</module>
+        <!--使用 Eureka 创建注册中心2：cloud-eureka-server7002-->
+        <module>cloud-eureka-server7002</module>
+        <!--使用 Eureka 创建注册中心3：cloud-eureka-server7003-->
+        <module>cloud-eureka-server7003</module>
+    6）、多服务集群，实现负载均衡  todo @LoadBalanced 注解赋予 RestTemplate 负载均衡的能力
+        todo 多服务集群有相同的应用名
+        <!--多服务集群，实现负载均衡-->
+        <!--服务端：支付模块：cloud-provider-payment8001-->
+        <module>cloud-provider-payment8001</module>
+        <!--服务端：支付模块：cloud-provider-payment8002-->
+        <module>cloud-provider-payment8002</module>
+
+
+
+二、Zookeeper
+   一个分布式协调工具，可以实现注册中心功能。Zookeeper 服务器可以取代 Eureka 服务器，zk 作为注册中心
+   使用：1、进入 Zookeeper 安装目录的Bin 目录：cd /usr/local/apache-zookeeper-3.6.1/bin
+           ./zkServer.sh start  #启动zookeeper
+           ./zkServer.sh status  #查看zookeeper运行状态
+           ./zkServer.sh stop   #停止zookeeper服务
+           ./zkCli.sh -server 127.0.0.1:2181  #连接zookeeper服务   // ./zkCli.sh 默认连接 localhost:2181
+           quit  # 退出 zookeeper
+           todo 使用命令启动并连接 zookeeper 后，就是开启了一个服务注册中心
+        2、连接成功后
+           ls /   # 查看 zookeeper 注册中心中是否有服务节点，有的化显示：[services, zookeeper]
+           ls -s / # 查看 zookeeper 注册中心状态信息
+           ls /services # 查看具体有哪些服务节点    todo 这些服务节点是临时的，当客户端断开之后，在一定时间后 zookeeper 会移除对应服务节点
+                如：[zk: 127.0.0.1:2181(CONNECTED) 3] ls /services
+                    [cloud.provider.payment-service]
+           ls /services/指定服务名   # 查看指定服务名 id
+                如：[zk: 127.0.0.1:2181(CONNECTED) 4] ls /services/cloud.provider.payment-service
+                    [17057edb-8de9-412f-8f59-0ae474b62cb7]
+           get /services/指定服务名/id   # 根据指定服务名 id 获取指定服务的具体信息
+                如：[zk: 127.0.0.1:2181(CONNECTED) 5] get /services/cloud.provider.payment-service/17057edb-8de9-412f-8f59-0ae474b62cb7
+
+   2、将 cloud-provider-payment8004 作为服务提供者，cloud-consumer-zk-order80 作为服务消费者注册进注册中心
+      <!--服务治理：客户端：服务提供者|消费者-->
+      <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-zookeeper-discovery -->
+      <dependency>
+          <groupId>org.springframework.cloud</groupId>
+          <artifactId>spring-cloud-starter-zookeeper-discovery</artifactId>
+          <!--移除自带的 zookeeper 3.5.3，防止与自建的 zookeeper 版本冲突-->
+          <!--<exclusions>
+              <exclusion>
+                  <groupId>org.apache.zookeeper</groupId>
+                  <artifactId>zookeeper</artifactId>
+              </exclusion>
+          </exclusions>-->      todo 我自建的 zookeeper 版本为 3.6.1，好像不会冲突
+      </dependency>
+      todo @EnableDiscoveryClient  // 一般用于 consul 或 zookeeper 作为注册中心时，注解指定客户端时
+   3、在配置文件中配置 zookeeper 注册中心端口：
+      # 配置 zookeeper 注册中心端口
+      spring.cloud.zookeeper.connect-string=localhost:2181
+
+三、Consul
+    Consul 开源的分布式服务发现和配置管理系统，用 Go 语言开发
+       提供微服务系统中服务治理、配置中心、控制总线等功能，这些功能可以单独使用，也可以共同使用
+       提供一种完整的服务网络解决方案
+    优点：基于 raft 协议，简洁；支持健康检查，支持 http 和 DNS 协议，支持跨数据中心的 WAN 集群；
+         提供图形界面；跨平台Linux、Mac、Windows
+         Key、Value 存储方式
+    结合SpringCloud：https://www.springcloud.cc/spring-cloud-consul.html
+    todo 使用：
+    1、下载：https://www.consul.io/downloads.html，解压后，复制 consul 二进制文件到 /usr/local/bin 目录下
+    2、进入 bin 目录中：cd /usr/local/bin
+       启动 Consul：consul agent -dev    // todo 这样，就启动了一个服务注册中心
+    3、打开图形界面：http://localhost:8500
+    4、将 cloud-provider-payment8006 作为服务提供者，cloud-consumer-consul-order80 作为服务消费者注册进注册中心
+        <!--服务治理：客户端：服务提供者|消费者-->
+        <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-consul-discovery -->
+        <dependency>
+          <groupId>org.springframework.cloud</groupId>
+          <artifactId>spring-cloud-starter-consul-discovery</artifactId>
+        </dependency>
+        todo @EnableDiscoveryClient  // 一般用于 consul 或 zookeeper 作为注册中心时，注解指定客户端时
+
+
+组件名     语言        CAP      服务健康检测     对外暴露接口          SpringCloud 集成          控制台管理
+Eureka    java        AP       可配支持        Http                 已集成                    支持
+Consul    Go          CP       支持           Http|DNS             已集成                    支持
+Zookeeper java        CP       支持           客户端                已集成                    不支持
+Nacos     java    CP/AP 可切换  支持           客户端                已集成                    支持
+
+

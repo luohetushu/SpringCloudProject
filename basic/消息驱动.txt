@@ -1,0 +1,96 @@
+解决的痛点：当我们的底层有各种各样的消息中间间的时候（ActiveMQ、RabbitMQ、RocketMQ、Kafka等），消息的切换、维护与开发则会变得十分的困难
+
+Spring Cloud Stream: 消息驱动
+    屏蔽底层消息中间件的差异，降低切换成本、统一消息的编程模型
+    一个构建消息驱动微服务的框架
+
+应用程序通过 inputs（消息消费）和 outputs（消息发送）来与 Spring Cloud Stream中的 binder 对象交互，通过配置来 binding（绑定）。
+而Spring Cloud Stream的 binder 对象负责与消息中间件交互
+
+通过定义绑定器 Binder 作为中间层，实现应用程序与消息中间件细节之间的隔离
+
+Spring Cloud Stream的 binder 对象如何与消息中间件交互的呢？
+    通过使用 Spring Integration 来连接消息代理中间件以实现消息事件驱动
+
+Spring Cloud Stream 为支持的消息中间件提供个性化的自动配置实现：发布-订阅、消费组、分区
+    目前只支持 RabbitMQ 和 Kafka
+
+Stream 中的消息通信方式遵循发布-订阅模式：使用 topic 主题进行广播
+
+
+todo 使用
+依赖:
+    <!--stream-rabbitmq 依赖-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+    </dependency>
+1、消息驱动之消息提供者：cloud-stream-rabbitmq-provider8801
+   1）、主配置文件配置 stream
+       spring:
+         # 应用名
+         application:
+           name: cloud-stream-provider
+         cloud:
+           # 配置 stream 消息驱动
+           stream:
+             # 绑定器
+             binders:
+               # 配置要绑定的 rabbitmq 的服务信息
+               defaultRabbit: # 表示定义的绑定器的名称，用于与 binding 整合
+                 type: rabbit  # 消息中间件类型
+                 enviroment:  # 设置 rabbit 相关环境配置
+                   spring:
+                     rabbitmq:
+                       host: localhost
+                       port: 5672
+                       username: guest
+                       password: guest
+             # 服务的整合处理
+             bindings:
+               output: # 定义的通道名称
+                 destination: studyExchange # 定义的 exchange 名称
+                 content-type: application/json  # 定义消息的类型，json；文本则为 text/plain
+                 binder: defaultRabbit # 关联具体的绑定器
+2、消息驱动之消息消费者：cloud-stream-rabbitmq-consumer8802
+  消息驱动之消息消费者：cloud-stream-rabbitmq-consumer8803
+  1）、主配置文件配置 stream
+     spring:
+       # 应用名
+       application:
+         name: cloud-stream-provider
+       cloud:
+         # 配置 stream 消息驱动
+         stream:
+           # 绑定器
+           binders:
+             # 配置要绑定的 rabbitmq 的服务信息
+             defaultRabbit: # 表示定义的绑定器的名称，用于与 binding 整合
+               type: rabbit  # 消息中间件类型
+               enviroment:  # 设置 rabbit 相关环境配置
+                 spring:
+                   rabbitmq:
+                     host: localhost
+                     port: 5672
+                     username: guest
+                     password: guest
+           # 服务的整合处理
+           bindings:
+             input: # 定义的通道名称
+               destination: studyExchange # 定义的 exchange 名称
+               content-type: application/json  # 定义消息的类型，json；文本则为 text/plain
+               binder: defaultRabbit # 关联具体的绑定器
+               # 设置消息分组，不同的组是可以全面消费的（重复消费）；同一组内会发生竞争关系，只有其中一个可以消费
+               #group: stream-consumer8803
+               group: stream-consumer
+todo 此时出现了问题：当有多个消息消费者时，同一则消息会被多次消费  ---  消息重复消费问题
+     可以使用 Stream 中的消息分组来解决：不同的组是可以全面消费的（重复消费） // 默认分组是不同的
+                                     同一组内会发生竞争关系，只有其中一个可以消费
+
+消息持久化的情况：
+当我们的消息提供者一直在发送消息的时候，如果此时我们的消费者死机了，而且该消费者没有设置自定义分组，那么会丢失死机时候的消息；
+只有 todo 设置了分组，该消费者再次启动的时候，就会去接收曾死机时提供者发送的消息
+
+
+
+

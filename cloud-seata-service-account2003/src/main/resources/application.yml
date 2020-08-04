@@ -1,0 +1,172 @@
+# 服务端口号
+server:
+  port: 2003
+
+
+spring:
+  application:
+    # 应用名
+    name: cloud-seata-service-account2003   # 多服务集群，有相同的应用名
+  cloud:
+    nacos:
+      discovery:
+        # nacos 服务注册中心地址
+        server-addr: 127.0.0.1:8848
+    alibaba:
+      seata:
+        # 配置事务分组
+        tx-service-group: test_tx_group
+  # 配置数据库
+  datasource:
+    # mysql驱动类
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/seata_account?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=GMT%2B8&useAffectedRows=true
+    username: root
+    password: root
+
+# seata 分布式事务配置
+seata:
+  application-id: ${spring.application.name}
+  tx-service-group: my_test_tx_group
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: AT
+  client:
+    rm:
+      async-commit-buffer-limit: 1000
+      report-retry-count: 5
+      table-meta-check-enable: false
+      report-success-enable: false
+      saga-branch-register-enable: false
+      saga-json-parser: fastjson
+      lock:
+        retry-interval: 10
+        retry-times: 30
+        retry-policy-branch-rollback-on-conflict: true
+    tm:
+      degrade-check: false
+      degrade-check-period: 2000
+      degrade-check-allow-times: 10
+      commit-retry-count: 5
+      rollback-retry-count: 5
+    undo:
+      data-validation: true
+      log-serialization: jackson
+      log-table: undo_log
+      only-care-update-columns: true
+    log:
+      exceptionRate: 100
+  service:
+    vgroup-mapping:
+      my_test_tx_group: default
+    grouplist:
+      default: 127.0.0.1:8091
+    enable-degrade: false
+    disable-global-transaction: false
+  transport:
+    shutdown:
+      wait: 3
+    thread-factory:
+      boss-thread-prefix: NettyBoss
+      worker-thread-prefix: NettyServerNIOWorker
+      server-executor-thread-prefix: NettyServerBizHandler
+      share-boss-worker: false
+      client-selector-thread-prefix: NettyClientSelector
+      client-selector-thread-size: 1
+      client-worker-thread-prefix: NettyClientWorkerThread
+      worker-thread-size: default
+      boss-thread-size: 1
+    type: TCP
+    server: NIO
+    heartbeat: true
+    serialization: seata
+    compressor: none
+    enable-client-batch-send-request: true
+  config:
+    type: file
+    consul:
+      server-addr: 127.0.0.1:8500
+    apollo:
+      apollo-meta: http://192.168.1.204:8801
+      app-id: seata-server
+      namespace: application
+    etcd3:
+      server-addr: http://localhost:2379
+    nacos:
+      namespace:
+      serverAddr: 127.0.0.1:8848
+      group: SEATA_GROUP
+    zk:
+      server-addr: 127.0.0.1:2181
+      session-timeout: 6000
+      connect-timeout: 2000
+      username: ""
+      password: ""
+  registry:
+    type: nacos
+    consul:
+      server-addr: 127.0.0.1:8500
+    etcd3:
+      serverAddr: http://localhost:2379
+    eureka:
+      weight: 1
+      service-url: http://localhost:8761/eureka
+    nacos:
+      server-addr: 127.0.0.1:8848
+      namespace:
+      cluster: default
+    redis:
+      server-addr: localhost:6379
+      db: 0
+      password:
+      timeout: 0
+    sofa:
+      server-addr: 127.0.0.1:9603
+      region: DEFAULT_ZONE
+      datacenter: DefaultDataCenter
+      group: SEATA_GROUP
+      addressWaitTime: 3000
+      application: default
+    zk:
+      server-addr: 127.0.0.1:2181
+      session-timeout: 6000
+      connect-timeout: 2000
+      username: ""
+      password: ""
+
+
+
+#配置 Mybatis
+mybatis:
+  # 映射器文件路径
+  mapper-locations: classpath:mapper/*.xml
+  # 扫描entity包 使用别名
+  type-aliases-package: com.springcloud.project.domain
+
+feign:
+  # 开启 Hystrix 熔断器: 进行服务降级或服务熔断
+  hystrix:
+    enabled: true
+  # 开启 openfeign 超时控制
+  client:
+    config:
+      default:
+        # 建立连接所用时间
+        connect-timeout: 20000
+        # 建立连接后从服务器读取到可用资源所用的时间
+        read-timeout: 20000
+
+# 暴露监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"   # 默认 health、info
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
+

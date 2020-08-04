@@ -1,0 +1,26 @@
+# 配置环境
+spring:
+  profiles:
+    # active: dev   # 开发环境
+    active: test   # 测试环境
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
+# 暴露监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"   # 默认 health、info
+
+
+
+
+
+
+

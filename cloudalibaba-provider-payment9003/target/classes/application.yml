@@ -1,0 +1,26 @@
+# 服务端口号
+server:
+  port: 9003
+
+# 应用名
+spring:
+  application:
+    name: cloud-nacos-provider-payment-service   # 多服务集群，有相同的应用名
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848  # 配置 nacos 地址
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
+# 暴露监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"   # 默认 health、info

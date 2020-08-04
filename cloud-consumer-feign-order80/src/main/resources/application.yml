@@ -1,0 +1,53 @@
+# 服务端口号
+server:
+  port: 8010
+
+# 应用名
+spring:
+  application:
+    name: cloud-consumer-feign-order80-serveice
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
+# 配置服务治理：客户端：服务消费者Eureka Client
+eureka:
+  client:
+    # 是否将自己注册进注册中心 EurekaServer
+    register-with-eureka: true
+    # 是否从 EurekaServer 检索已有的注册信息，默认 true
+    # 单节点无所谓，集群必须设置为true，配合 ribbon 使用负载均衡
+    fetch-registry: true
+    # 设置注册中心地址
+    service-url:
+      #defaultZone: http://localhost:7001/eureka/  # 注册中心只有一个的情况
+      # 注册中心集群
+      #defaultZone: http://eureka7001.com:7001/eureka/, http://eureka7002.com:7002/eureka/, http://eureka7003.com:7003/eureka/
+      defaultZone: http://eureka7001.com:7001/eureka/
+  instance:
+    #主机名称：服务名称修改
+    instance-id: consumer-feign-order80
+    #访问信息：是否提示 IP 信息
+    prefer-ip-address: true
+
+# 开启 openfeign 超时控制
+feign:
+  client:
+    config:
+      default:
+        # 建立连接所用时间
+        connect-timeout: 20000
+        # 建立连接后从服务器读取到可用资源所用的时间
+        read-timeout: 20000
+
+# 指定服务提供者的地址：服务集群名.ribbon.listOfServers=服务提供者的地址1, 服务提供者的地址2 ...
+cloud-provider-payment-service:
+      ribbon:
+        # listOfServers: http://localhost:8001, http://localhost:8002
+        listOfServers: http://localhost:8001
+
+

@@ -1,0 +1,65 @@
+# 服务端口号
+server:
+  port: 3344
+
+# 应用名
+spring:
+  application:
+    name: cloud-config-center3344
+  # 配置配置中心
+  cloud:
+    config:
+      server:
+        git:
+          # 远程仓库地址 http 连接
+          #uri: https://github.com/luohetushu/SpringCloudConfigRepository
+          # 远程仓库地址 SSH 连接
+          uri: git@github.com:luohetushu/SpringCloudConfigRepository
+          # 搜索目录
+          search-paths:
+            - SpringCloudConfigRepository
+      label: master
+  # 配置 RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+# 配置监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        # 暴露 bus 刷新配置的端点
+        include: "bus-refresh"  # 默认 health，info
+
+# 配置服务治理：客户端：服务提供者Eureka Client
+eureka:
+  client:
+    # 是否将自己注册进注册中心 EurekaServer
+    register-with-eureka: true
+    # 是否从 EurekaServer 检索已有的注册信息，默认 true
+    # 单节点无所谓，集群必须设置为true，配合 ribbon 使用负载均衡
+    fetch-registry: true
+    # 设置注册中心地址
+    service-url:
+      #defaultZone: http://localhost:7001/eureka/
+      # 注册中心集群
+      #defaultZone: http://eureka7001.com:7001/eureka/, http://eureka7002.com:7002/eureka/, http://eureka7003.com:7003/eureka/
+      defaultZone: http://eureka7001.com:7001/eureka/
+  instance:
+    #主机名称：服务名称修改
+    instance-id: cloud-config-center3344
+    #访问信息：是否提示 IP 信息
+    prefer-ip-address: true
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
+
+

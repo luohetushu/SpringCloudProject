@@ -1,0 +1,28 @@
+Spring Cloud
+基于Spring Boot实现的云应用开发工具
+为基于JVM的云应用开发中涉及的配置管理、服务发现、断路器、智能路由、微代理、控制总线、全局锁、决策竞选、分布式会话和集群状态管理等操作提供一种简单的开发方式
+
+微服务架构: 将一个完整的应用从数据存储开始垂直拆分成多个不同的服务，每个服务都能独立部署、独立维护、独立扩展，服务与服务间通过诸如RESTful API的方式互相调用
+
+SpringCloud 服务与组件：
+    服务中心                Alibaba Cloud Nacos
+    服务调用                Load Balancer
+    服务调用2               OpenFeign
+    服务降级                Alibaba Cloud sentienl
+    服务网关                gateway
+    服务配置                Alibaba Cloud Nacos
+    服务总线                Alibaba Cloud Nacos
+
+
+application.yml 是用户级的资源配置
+bootstrap.yml  是系统级的，优先级更高
+
+
+
+
+
+
+
+
+
+

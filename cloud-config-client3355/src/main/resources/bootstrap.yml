@@ -1,0 +1,57 @@
+# 服务端口号
+server:
+  port: 3355
+
+# 应用名
+spring:
+  application:
+    # name: cloud-client3355
+    name: cloud-client   # 多个客户端，使用同一个名称
+  cloud:
+    # Config 客户端配置
+    config:
+      label: master    # 分支
+      name: config   # 配置文件名
+      profile: dev   # 环境    # 综上三个表示：读取配置中心 master 分支下的 config-dev.yml 配置文件
+      uri: http://config-3344.com:3344   # 配置中心地址
+  # 配置 RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+# 配置服务治理：客户端：服务提供者Eureka Client
+eureka:
+  client:
+    # 是否将自己注册进注册中心 EurekaServer
+    register-with-eureka: true
+    # 是否从 EurekaServer 检索已有的注册信息，默认 true
+    # 单节点无所谓，集群必须设置为true，配合 ribbon 使用负载均衡
+    fetch-registry: true
+    # 设置注册中心地址
+    service-url:
+      #defaultZone: http://localhost:7001/eureka/
+      # 注册中心集群
+      #defaultZone: http://eureka7001.com:7001/eureka/, http://eureka7002.com:7002/eureka/, http://eureka7003.com:7003/eureka/
+      defaultZone: http://eureka7001.com:7001/eureka/
+  instance:
+    #主机名称：服务名称修改
+    instance-id: cloud-client3355
+    #访问信息：是否提示 IP 信息
+    prefer-ip-address: true
+
+# 配置监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # 监控所有，默认 health，info
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+

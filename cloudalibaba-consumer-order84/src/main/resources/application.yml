@@ -1,0 +1,51 @@
+# 服务端口号
+server:
+  port: 8410
+
+# 应用名
+spring:
+  application:
+    name: cloud-nacos-consumer-order-service
+  cloud:
+    nacos:
+      discovery:
+        # nacos 服务注册中心地址
+        server-addr: 127.0.0.1:8848
+    sentinel:
+      transport:
+        # 配置 sentinel-dashboard 地址
+        dashboard: localhost:8080
+        # 默认8719端口，假如被占用会自动从8719开始依次+1扫描，直至找到未被占用的端口
+        port: 8719
+
+# 服务提供者地址：消费者将要去访问的微服务名称（注册进 nacos 的服务提供者）
+service-url:
+  nacos-provider-service: http://cloud-nacos-provider-payment-service
+
+# 指定服务提供者的地址：服务集群名.ribbon.listOfServers=服务提供者的地址1, 服务提供者的地址2 ...
+cloud-nacos-provider-payment-service:
+  ribbon:
+    listOfServers: http://localhost:9003, http://localhost:9004
+
+# 开启支持 Feign
+feign:
+  sentinel:
+    enabled: true
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
+# 暴露监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"   # 默认 health、info
+
+
+
+

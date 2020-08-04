@@ -1,0 +1,18 @@
+Springboot项目如何将类从@ComponentScan中排除
+方案一: 将需要排除扫描的配置类定义在 Springboot 应用启动主类所在包外面
+方案二：通过在启动类中添加
+       @ComponentScan(excludeFilters = @ComponentScan.Filter(
+    		type = FilterType.ASSIGNABLE_TYPE,
+    		classes = RibbonConfig.class))
+       通过FilterType.ASSIGNABLE_TYPE来指定要排除的类
+       如果需要排除的类太多了这个就很麻烦
+方案三：通过自定义注解实现
+       @ComponentScan(excludeFilters = @ComponentScan.Filter(
+		    type = FilterType.ANNOTATION,
+		    classes = IgnoreScan.class))
+       在需要排除扫描的配置类上添加 @IgnoreScan
+方案四：通过实现 TypeFilter 类来自定义过滤器
+
+
+
+

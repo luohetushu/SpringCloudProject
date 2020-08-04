@@ -1,0 +1,130 @@
+Webflux：典型的非阻塞异步框架，核心是基于 Reactor 的相关API实现
+
+Spring Cloud Gateway
+    Gateway 是 Spring 生态系统之上构建的API网关服务，旨在提供一种简单有效的方式来对 API 进行路由，同时提供强大的过滤器功能，如熔断、限流、重试等
+    目的是提供统一的路由方式且基于 Filter 链的方式提供网关基本的功能，如安全、监控/指标，和限流
+    使用 Webflux 中的 reactor-netty 响应式编程组件，底层使用 Netty 通讯框架
+
+特性：
+（1）基于 Spring Framework 5，Project Reactor 和 Spring Boot 2.0
+（2）集成 Hystrix 断路器
+（3）集成 Spring Cloud DiscoveryClient（服务发现）
+（4）Predicates 和 Filters 作用于特定路由，易于编写的 Predicates 和 Filters
+（5）具备一些网关的高级功能：动态路由、限流、路径重写
+
+核心概念：
+（1）Filter（过滤器）：用于拦截和修改请求，并对上游的响应，进行二次处理。
+    过滤器为org.springframework.cloud.gateway.filter.GatewayFilter类的实例。
+    可以在请求被路由前或路由后，对请求进行修改
+（2）Route（路由）：
+    网关配置的基本组成模块：一个Route模块由一个 ID，一个目标 URI，一组断言和一组过滤器定义。如果断言为真，则路由匹配，目标URI会被访问。
+（3）Predicate（断言）：
+    用来匹配来自 HTTP 请求的任何内容，例如 headers 或参数，todo 如果请求与断言相匹配则进行路由
+    断言的输入类型是一个 ServerWebExchange
+
+核心过程：路由转发和执行过滤链
+
+
+todo 使用
+1、依赖：todo 网关版本的依赖需要注意 spring-webflux 的版本
+   <!--服务网关-->
+   <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-gateway -->
+   <dependency>
+       <groupId>org.springframework.cloud</groupId>
+       <artifactId>spring-cloud-starter-gateway</artifactId>
+   </dependency>
+   todo：网关的依赖需要考虑到版本适配。。。
+2、配置网关路由
+1）、在主配置文件中配置网关路由：
+  spring:
+    cloud:
+      gateway:
+        routes:
+          - id: payment8001-route-query     # 路由 id，没有固定规则但要求唯一，建议配合微服务名
+            uri: http://localhost:8001        # 匹配后提供服务的路由地址
+            predicates:  # 一组断言
+              - Path=/payment8001/query/**    # 断言，路径匹配则进行路由
+          - id: payment8001-route-lb     # 路由 id，没有固定规则但要求唯一，建议配合微服务名
+            uri: http://localhost:8001        # 匹配后提供服务的路由地址
+            predicates:  # 一组断言
+              - Path=/payment8001/lb/**    # 断言，路径匹配则进行路由
+2）、创建配置类配置
+     @Bean
+     public RouteLocator routeLocator(RouteLocatorBuilder builder){
+         RouteLocatorBuilder.Builder routes = builder.routes();
+         routes.route("path_route_guonei",
+                 r -> r.path("/payment/guonei")         // HTTP ERROR 500  ??? todo 应该是服务器会去查找 /payment 路径的 controller
+                         .uri("http://news.baidu.com/guonei"))
+                 .route("path_route_guonei2",
+                      r -> r.path("/guonei")         // 可以调用
+                              .uri("http://news.baidu.com/guonei"))
+                 .route("path_route_guoji",
+                         r -> r.path("/guoji")           // 可以调用
+                                 .uri("http://news.baidu.com/guoji"))
+                 .route("path_route_timeout",
+                         r -> r.path("/payment8001/timeout")   // 可以调用
+                                 .uri("http://localhost:8001/payment8001/timeout"));
+         return routes.build();
+     }
+
+3、实现动态路由：由网关来实现负载均衡
+   默认情况下，Gateway 会根据注册中心注册的服务列表，以注册中心上的微服务名为路径创建动态路由进行转发，从而实现统统路由的功能
+   主配置类修改：
+       spring
+         cloud:
+           gateway:
+             discovery:
+               locator:
+                 enabled: true       # 开启从注册中心动态创建路由的功能，以注册中心上的微服务名为路径创建动态路由
+             routes:
+               - id: payment8001-route-query     # 路由 id，没有固定规则但要求唯一，建议配合微服务名
+                 #uri: http://localhost:8001        # 匹配后提供服务的路由地址
+                 uri: lb://CLOUD-PROVIDER-PAYMENT-SERVICE      # lb 负载均衡
+                 predicates:  # 一组断言
+                   - Path=/payment8001/query/**    # 断言，路径匹配则进行路由
+               - id: payment8001-route-lb     # 路由 id，没有固定规则但要求唯一，建议配合微服务名
+                 #uri: http://localhost:8001        # 匹配后提供服务的路由地址
+                 uri: lb://CLOUD-PROVIDER-PAYMENT-SERVICE      # lb 负载均衡
+                 predicates:  # 一组断言
+                   - Path=/payment8001/lb/**    # 断言，路径匹配则进行路由
+
+todo 常用 Predicate
+routes:
+   - id: payment8001-route-query     # 路由 id，没有固定规则但要求唯一，建议配合微服务名
+     #uri: http://localhost:8001        # 匹配后提供服务的路由地址
+     uri: lb://CLOUD-PROVIDER-PAYMENT-SERVICE      # lb 负载均衡
+     predicates:
+          - After=2020-07-27T21:39:02.978137+08:00[Asia/Shanghai]    # 指定时间之后，匹配所有的请求
+          - Before=2020-07-27T21:39:02.978137+08:00[Asia/Shanghai]   # 在指定时间之前，匹配所有的请求
+          - Between=2020-07-27T21:39:02.978137+08:00[Asia/Shanghai], 2020-07-29T21:39:02.978137+08:00[Asia/Shanghai] # 指定时间期间内
+          - Cookie=chocolate, ch.p  # 匹配带有名为"chocolate"，值匹配"ch.p"该正则表达式的 Cookie 的请求
+              如：curl http://localhost:9527/payment8001/lb/port --cookie "username=xxx\w+"
+          - Header=X-Request-Id, \d+
+              如：curl http://localhost:9527/payment8001/lb/port -H "X-Request-Id:123"
+          - Host=**.somehost.org,**.anotherhost.org  # 匹配包含如：www.somehost.org or or www.anotherhost.org，此类的域名的请求
+              如：curl http://localhost:9527/payment8001/lb/port -H "Host: www.somehost.org"
+          - Method=GET   # 匹配 Get 请求
+          - Path=/payment8001/lb/**    # 断言，路径匹配则进行路由
+          - Query=baz    # 匹配包含名为"baz"的请求参数的请求
+          - Query=foo, ba.  # 匹配包含名为"baz"，值为"ba."次正则表达式，如"baz"、"bar"的请求参数的请求
+          - RemoteAddr=192.168.1.1/24  # 匹配符合地址的请求，如：192.168.1.10
+
+
+todo GatewayFilter
+路由过滤器用于修改进入的 Http 请求 和 Http 响应，路由过滤器只能指定路由进行使用
+生命周期：pre：被路由前的 Http 请求
+        post：被路由后的 Http 请求
+类型：GateFilter：单一种类的过滤器
+         自动配置类配置单一种类过滤器：
+            routes:
+               - id: payment8001-route-query     # 路由 id，没有固定规则但要求唯一，建议配合微服务名
+                 #uri: http://localhost:8001        # 匹配后提供服务的路由地址
+                 uri: lb://CLOUD-PROVIDER-PAYMENT-SERVICE      # lb 负载均衡
+                 filters:
+                    - AddRequestHeader=X-Request-Foo, Bar   # 给请求添加指定请求头
+     GlobalFilter：全局过滤器
+         自定义全局过滤器：实现 org.springframework.cloud.gateway.filter.GlobalFilter 接口 和 Ordered 接口
+            @Component
+            public class MyLogGatewayFilter implements GlobalFilter, Ordered {...}
+
+

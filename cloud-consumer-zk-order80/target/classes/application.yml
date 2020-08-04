@@ -1,0 +1,20 @@
+# 服务端口号
+server:
+  port: 8010
+
+# 应用名
+spring:
+  application:
+    name: cloud.consumer.order80-serveice
+  cloud:
+    # 配置 zookeeper 注册中心端口
+    zookeeper:
+      connect-string: localhost:2181
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+

@@ -1,0 +1,124 @@
+Nacos：Dynamic Naming and Configuration service
+       一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台
+       服务治理（注册中心）+ 服务配置 + 服务消息总线：Nacos = Eureka + Config + Bus
+       下载安装：https://github.com/alibaba/nacos/releases
+       启动：进入到 bin 目录，命令启动：sh startup.sh -m standalone
+       打开可视化界面：http://127.0.0.1:8848/nacos   用户名：nacos  密码：nacos
+
+CAP 理论：
+C 是所有微服务节点在同一时间看到的数据一致；
+A 是所有的请求都会收到响应
+P 分区容错性
+
+何时选择何种模式？
+1）、如果不需要存储服务级别的信息，且服务实例是通过 nacos-client 注册，并能保持心跳上报，那么可以选择 AP 模式
+    Spring Cloud 和 Dubbo 服务都适用 AP 模式
+    AP 模式为了服务的可用性而减弱了一致性，因此 AP 模式只支持注册临时实例
+2）、如果需要在服务级别编辑或者存储配置信息，那么选择 CP 模式
+    K8S 和 DNS 服务都适用 CP 模式
+    CP 模式支持注册持久化实例，此时是以 Raft 协议为集群运行模式，该模式下注册实例之前必须先注册服务，如果服务不存在，则返回错误
+
+
+Nacos 支持 AP/CP 模式的切换：
+    切换 CP ：curl -X PUT '$NACOS_SERVER:8848/nacos/v1/ns/operator/switches?entry=serverMode&value=CP'
+
+
+todo 使用 nacos 实现服务治理(注册中心 + 服务发现)
+1、服务注册中心：
+   下载安装：https://github.com/alibaba/nacos/releases
+       1、git clone https://gitee.com/mirrors/Nacos.git
+       2、cd Nacos
+       3、mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U    // 编译安装
+       4、进入到 bin 目录：cd distribution/target/nacos-server-1.3.1/nacos/bin
+       5、启动：sh startup.sh -m standalone
+   启动：进入到 bin 目录，命令启动：sh startup.sh -m standalone
+                        命令关闭：sh shutdown.sh
+   打开可视化界面：http://127.0.0.1:8848/nacos   用户名：nacos  密码：nacos
+2、服务提供者：cloudalibaba-provider-payment9001
+             cloudalibaba-provider-payment9002       todo nacos 默认实现负载均衡
+   服务消费者：cloudalibaba-consumer-order83
+
+   依赖：<!--Nacos：服务治理、服务发现-->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+   主配置文件配置：
+        spring.cloud.nacos.discovery.server-addr=127.0.0.1:8848  # 配置 nacos 地址
+        # 暴露监控端点
+        management.endpoints.web.exposure.include="*"   # 默认 health、info
+   主启动类激活：todo @EnableDiscoveryClient
+
+组件名     语言        CAP      服务健康检测     对外暴露接口          SpringCloud 集成          控制台管理
+Eureka    java        AP       可配支持        Http                 已集成                    支持
+Consul    Go          CP       支持           Http|DNS             已集成                    支持
+Zookeeper java        CP       支持           客户端                已集成                    不支持
+Nacos             CP/AP 可切换  支持           客户端                已集成                    支持
+
+
+
+todo 使用 nacos 实现服务配置
+1、配置中心模块：直接在 nacos 界面中添加"配置列表"
+  配置文件格式 DataId：todo ${prefix}-${spring.profile.active}.${file-extension}
+      prefix：一般为 spring.application.name 默认值，也可以自定义配置：spring.cloud.nacos.config.prefix
+      spring.profile.active：当前环境，在 application.yml 配置文件中配置
+      file-extension：配置内容的数据格式，配置 spring.cloud.nacos.config.file-extension。当前仅支持 properties 和 yaml 类型
+                      todo 必须是 .yaml 文件，目前还不支持 .yml
+2、配置中心模块：客户端：cloudalibaba-config-nacos-client3377
+  依赖： <!--Nacos：服务治理、服务发现-->
+        <dependency>
+         <groupId>com.alibaba.cloud</groupId>
+         <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        <!--Nacos：服务配置-->
+        <dependency>
+         <groupId>com.alibaba.cloud</groupId>
+         <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+         <version>${latest.version}</version>
+        </dependency>
+  bootstrap.yml 配置文件配置：
+       # 服务端口号
+       server.port=3377
+       # 应用名
+       spring.application.name=cloud-nacos-config-client
+       spring.cloud.nacos.discovery.server-addr=127.0.0.1:8848  # nacos 作为服务注册中心的地址
+       spring.cloud.nacos.config.server-addr=127.0.0.1:8848  # nacos 作为配置中心的地址
+       spring.cloud.nacos.config.file-extension=yaml    # 读取的配置文件的格式：yaml 格式的配置
+       spring.cloud.nacos.config.namespace=37c2369c-302b-44c6-850c-c8e7ab61201c # 命名空间 id，用于读取哪个命名空间下的哪个分组的配置文件
+       spring.cloud.nacos.config.group=DEFAULT_GROUP   # 读取哪个分组下的配置文件
+  application.yml 配置文件配置：
+       # 配置环境
+       spring.profiles.active=dev   # 开发环境
+       # 暴露监控端点
+       management.endpoints.web.exposure.include="*"   # 默认 health、info
+    todo 自动实现动态刷新，配置文件修改之后，不需要手动发送 post 请求
+
+
+Nacos 默认使用嵌入的数据库（derby）实现数据的存储，如果启动多个默认配置下的Nacos节点，存储的数据存在一致性问题。
+      为了解决这个问题，Nacos 采用集中式存储的方式（配置外部数据库Mysql）来支持集群化部署
+
+Nacos 支持三种部署模式：
+  单机模式：用于测试和单机适用
+  集群模式：用于生产环境，确保高可用
+  多集群模式：用于多数据中心场景
+
+todo Nacos 集群配置：https://nacos.io/zh-cn/docs/cluster-mode-quick-start.html
+3个或3个以上 Nacos 节点才能构成集群
+1、配置外部数据库Mysql：
+   本地 mysql 数据库：创建 nacos-config 数据库，并执行 nacos-mysql.sql
+   conf 文件下配置文件 application.properties 添加数据库连接配置:
+       ### If use MySQL as datasource:
+       spring.datasource.platform=mysql
+       ### Count of DB:
+       db.num=1
+       ### Connect URL of DB:
+       db.url.0=jdbc:mysql://127.0.0.1:3306/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000
+                &autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+       db.user=root
+       db.password=root
+
+
+
+
+
+

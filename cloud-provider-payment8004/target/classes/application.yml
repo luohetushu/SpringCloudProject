@@ -1,0 +1,19 @@
+# 服务端口号
+server:
+  port: 8004
+
+# 应用名 : 注册进注册中心的服务别名
+spring:
+  application:
+    name: cloud.provider.payment-service
+  cloud:
+    # 配置 zookeeper 注册中心端口
+    zookeeper:
+      connect-string: localhost:2181
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug

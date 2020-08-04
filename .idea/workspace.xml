@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="c2bfb095-d2a6-43ed-bf88-eea645c0eca0" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="localRepository" value="/Library/apache-maven-3.6.3/maven-repository" />
+        <option name="mavenHome" value="/Library/apache-maven-3.6.3" />
+        <option name="userSettingsFile" value="/Library/apache-maven-3.6.3/conf/settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+    <option name="importingSettings">
+      <MavenImportingSettings>
+        <option name="importAutomatically" value="true" />
+        <option name="vmOptionsForImporter" value="-Xmx768m" />
+      </MavenImportingSettings>
+    </option>
+  </component>
+  <component name="MavenRunner">
+    <option name="skipTests" value="true" />
+  </component>
+  <component name="ProjectId" id="1f1yermHQa8SjeyWuoCymdLNRjz" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RequestMappingsPanelOrder0" value="0" />
+    <property name="RequestMappingsPanelOrder1" value="1" />
+    <property name="RequestMappingsPanelWidth0" value="75" />
+    <property name="RequestMappingsPanelWidth1" value="75" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="jdk.selected.JAVA_MODULE" value="11" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/cloud-seata-service-account2003/src/main/resources" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.0" />
+    <property name="project.structure.side.proportion" value="0.0" />
+    <property name="settings.editor.selected.configurable" value="MavenSettings" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/cloud-seata-service-storage2002/src/main/resources/mapper" />
+      <recent name="$PROJECT_DIR$/alibaba" />
+      <recent name="$PROJECT_DIR$/cloud-gateway-gateway9527/src/test/java/com/springcloud/project" />
+      <recent name="$PROJECT_DIR$/cloud-provider-payment8004/src/main/resources" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.springcloud.project.service" />
+      <recent name="com.springcloud.project.ignore" />
+      <recent name="com.springcloud.project.config" />
+      <recent name="com.springcloud.project.controller" />
+      <recent name="com.springcloud.project" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/cloud-seata-service-account2003/src/main/resources" />
+      <recent name="$PROJECT_DIR$/cloud-seata-service-account2003/src/main/java/com/springcloud/project" />
+      <recent name="$PROJECT_DIR$/cloud-seata-service-storage2002/src/main/java/com/springcloud/project/config" />
+      <recent name="$PROJECT_DIR$/cloud-seata-service-storage2002/src/main/resources" />
+      <recent name="$PROJECT_DIR$/cloudalibaba-consumer-order84/src/main/resources" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="SpringBootApplicationConfigurationType" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager" selected="Spring Boot.SeataAccountMain2003">
+    <configuration name="OrderMain84" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="cloudalibaba-consumer-order84" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.springcloud.project.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.springcloud.project.OrderMain84" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SeataAccountMain2003" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="cloud-seata-service-account2003" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.springcloud.project.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.springcloud.project.SeataAccountMain2003" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SeataOrderMain2001" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="cloud-seata-service-order2001" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.springcloud.project.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.springcloud.project.SeataOrderMain2001" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SeataStorageMain2002" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="cloud-seata-service-storage2002" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.springcloud.project.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.springcloud.project.SeataStorageMain2002" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SentinelServiceMain8401" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="cloudalibaba-sentinel-service8401" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.springcloud.project.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.springcloud.project.SentinelServiceMain8401" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Spring Boot.SeataOrderMain2001" />
+        <item itemvalue="Spring Boot.SeataStorageMain2002" />
+        <item itemvalue="Spring Boot.SeataAccountMain2003" />
+        <item itemvalue="Spring Boot.SentinelServiceMain8401" />
+        <item itemvalue="Spring Boot.OrderMain84" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <option name="contentProportion" value="0.25420016" />
+          <treeState>
+            <expand>
+              <path>
+                <item name="services root" type="e789fda9:ObjectUtils$Sentinel" />
+                <item name="Spring Boot" type="7427dc5b:ServiceModel$ServiceGroupNode" />
+              </path>
+              <path>
+                <item name="services root" type="e789fda9:ObjectUtils$Sentinel" />
+                <item name="Spring Boot" type="7427dc5b:ServiceModel$ServiceGroupNode" />
+                <item name="Finished" type="7427dc5b:ServiceModel$ServiceGroupNode" />
+              </path>
+            </expand>
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="c2bfb095-d2a6-43ed-bf88-eea645c0eca0" name="Default Changelist" comment="" />
+      <created>1595399991976</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1595399991976</updated>
+      <workItem from="1595399995779" duration="14521000" />
+      <workItem from="1595431684156" duration="3417000" />
+      <workItem from="1595482160713" duration="189995000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="320" y="127" key="#Project_Structure" timestamp="1595429647199">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="320" y="127" key="#Project_Structure/0.23.1440.877@0.23.1440.877" timestamp="1595429647199" />
+    <state x="533" y="184" key="#com.intellij.ide.util.MemberChooser" timestamp="1596355728047">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="533" y="184" key="#com.intellij.ide.util.MemberChooser/0.23.1440.877@0.23.1440.877" timestamp="1596355728047" />
+    <state x="260" y="394" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog" timestamp="1595434415458">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="260" y="394" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog/0.23.1440.877@0.23.1440.877" timestamp="1595434415458" />
+    <state width="1020" height="212" key="GridCell.Tab.0.bottom" timestamp="1596358872178">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.0.bottom/0.23.1440.877@0.23.1440.877" timestamp="1596358872178" />
+    <state width="1020" height="212" key="GridCell.Tab.0.center" timestamp="1596358872177">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.0.center/0.23.1440.877@0.23.1440.877" timestamp="1596358872177" />
+    <state width="1020" height="212" key="GridCell.Tab.0.left" timestamp="1596358872176">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.0.left/0.23.1440.877@0.23.1440.877" timestamp="1596358872176" />
+    <state width="1020" height="212" key="GridCell.Tab.0.right" timestamp="1596358872177">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.0.right/0.23.1440.877@0.23.1440.877" timestamp="1596358872177" />
+    <state width="1020" height="212" key="GridCell.Tab.1.bottom" timestamp="1596358872179">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.1.bottom/0.23.1440.877@0.23.1440.877" timestamp="1596358872179" />
+    <state width="1020" height="212" key="GridCell.Tab.1.center" timestamp="1596358872178">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.1.center/0.23.1440.877@0.23.1440.877" timestamp="1596358872178" />
+    <state width="1020" height="212" key="GridCell.Tab.1.left" timestamp="1596358872178">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.1.left/0.23.1440.877@0.23.1440.877" timestamp="1596358872178" />
+    <state width="1020" height="212" key="GridCell.Tab.1.right" timestamp="1596358872178">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state width="1020" height="212" key="GridCell.Tab.1.right/0.23.1440.877@0.23.1440.877" timestamp="1596358872178" />
+    <state x="229" y="63" key="SettingsEditor" timestamp="1596015186547">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="229" y="63" key="SettingsEditor/0.23.1440.877@0.23.1440.877" timestamp="1596015186547" />
+    <state x="399" y="294" key="com.intellij.ide.util.TipDialog" timestamp="1595431684479">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="399" y="294" key="com.intellij.ide.util.TipDialog/0.23.1440.877@0.23.1440.877" timestamp="1595431684479" />
+    <state x="386" y="223" width="816" height="540" key="find.popup" timestamp="1596532966522">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="386" y="223" width="816" height="540" key="find.popup/0.23.1440.877@0.23.1440.877" timestamp="1596532966522" />
+    <state x="115" y="23" key="new project wizard" timestamp="1596343971622">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="115" y="23" key="new project wizard/0.23.1440.877@0.23.1440.877" timestamp="1596343971622" />
+  </component>
+</project>

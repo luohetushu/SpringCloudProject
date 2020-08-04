@@ -1,0 +1,42 @@
+SpringCloud 与 SpringBoot 版本对应关系
+
+https://start.spring.io/actuator/info
+
+"spring-cloud":{
+    "Finchley.M2":"Spring Boot >=2.0.0.M3 and <2.0.0.M5",
+    "Finchley.M3":"Spring Boot >=2.0.0.M5 and <=2.0.0.M5",
+    "Finchley.M4":"Spring Boot >=2.0.0.M6 and <=2.0.0.M6",
+    "Finchley.M5":"Spring Boot >=2.0.0.M7 and <=2.0.0.M7",
+    "Finchley.M6":"Spring Boot >=2.0.0.RC1 and <=2.0.0.RC1",
+    "Finchley.M7":"Spring Boot >=2.0.0.RC2 and <=2.0.0.RC2",
+    "Finchley.M9":"Spring Boot >=2.0.0.RELEASE and <=2.0.0.RELEASE",
+    "Finchley.RC1":"Spring Boot >=2.0.1.RELEASE and <2.0.2.RELEASE",
+    "Finchley.RC2":"Spring Boot >=2.0.2.RELEASE and <2.0.3.RELEASE",
+    "Finchley.SR4":"Spring Boot >=2.0.3.RELEASE and <2.0.999.BUILD-SNAPSHOT",
+    "Finchley.BUILD-SNAPSHOT":"Spring Boot >=2.0.999.BUILD-SNAPSHOT and <2.1.0.M3",
+    "Greenwich.M1":"Spring Boot >=2.1.0.M3 and <2.1.0.RELEASE",
+    "Greenwich.SR6":"Spring Boot >=2.1.0.RELEASE and <2.1.16.BUILD-SNAPSHOT",
+    "Greenwich.BUILD-SNAPSHOT":"Spring Boot >=2.1.16.BUILD-SNAPSHOT and <2.2.0.M4",
+    "Hoxton.SR6":"Spring Boot >=2.2.0.M4 and <2.3.2.BUILD-SNAPSHOT",
+    "Hoxton.BUILD-SNAPSHOT":"Spring Boot >=2.3.2.BUILD-SNAPSHOT and <2.4.0.M1",
+    "2020.0.0-SNAPSHOT":"Spring Boot >=2.4.0.M1"
+},
+"spring-cloud-alibaba":{
+    "2.2.1.RELEASE":"Spring Boot >=2.2.0.RELEASE and <2.3.0.M1"
+}
+
+Spring Cloud：
+Release Train Version: Hoxton.SR5
+      文档：https://cloud.spring.io/spring-cloud-static/Hoxton.SR5/reference/html/
+Supported Boot Version: 2.2.4.RELEASE
+      文档：https://docs.spring.io/spring-boot/docs/2.2.4.RELEASE/reference/htmlsingle/
+
+spring-cloud-alibaba : 2.2.1.RELEASE
+
+GA:General availability：通用版本。并且已经很稳定了，功能齐全。
+RC:Release candidate：发布候选版本。功能较为齐全，相对稳定，问题应该相对少和次要，值得报告，bug将会修复。
+M:Milestone build：里程碑版本。功能还不全，项目完成了一个计划，但是还是可能有问题的。
+SRX:Service Release：服务发布版本
+
+
+

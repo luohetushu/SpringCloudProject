@@ -1,0 +1,92 @@
+Spring Cloud Config
+为微服务架构中的微服务提供集中化的外部配置支持，配置服务器为各个不同微服务应用的所有环境提供一个中心化的外部配置
+
+todo 使用
+配置中心模块：服务端：cloud-config-center3344：用于连接管理远程仓库
+1、依赖
+   <!--配置中心：服务端依赖-->
+   <dependency>
+       <groupId>org.springframework.cloud</groupId>
+       <artifactId>spring-cloud-config-server</artifactId>
+   </dependency>
+2、主启动类添加注解：@EnableConfigServer    // 激活配置中心
+3、主配置类中配置配置中心：
+   spring:
+     # 配置配置中心
+     cloud:
+       config:
+         server:
+           git:
+             # 远程仓库地址 http 连接
+             #uri: https://github.com/luohetushu/SpringCloudConfigRepository
+             # 远程仓库地址 SSH 连接
+             uri: git@github.com:luohetushu/SpringCloudConfigRepository
+             # 搜索目录
+             search-paths:
+               - SpringCloudConfigRepository
+         label: master
+4、请求查看配置中心的配置文件：http://config-3344.com:3344/master/config-dev.yml
+   config:
+     info: master branch, SpringCloudConfigRepository/config-dev.yml version=1
+
+读取配置文件规则：
+   /{label}/{name}-{profile}.yml
+   /{name}-{profile}.yml  // 默认 master 分支
+   /{name}/{profile}/{label}
+   label: 分支
+   name：配置文件名
+   profile：环境（dev/test/prod等）
+
+
+配置中心模块：客户端：cloud-config-client3355
+1、依赖
+   <!--配置中心：客户端依赖-->
+   <dependency>
+       <groupId>org.springframework.cloud</groupId>
+       <artifactId>spring-cloud-starter-config</artifactId>
+   </dependency>
+2、配置文件：bootstrap.yml : 优先级高于 application.yml
+   spring
+     cloud:
+       # Config 客户端配置
+       config:
+         label: master    # 分支
+         name: config   # 配置文件名
+         profile: dev   # 环境    # 综上三个表示：读取配置中心 master 分支下的 config-dev.yml 配置文件
+         uri: http://config-3344.com:3344/   # 配置中心地址
+3、此时就可以通过我们请的请求获取到配置中心里指定配置文件的配置内容
+  @Value("${config.info}")
+  private String configInfo;   // 这个是用来读取配置中心里配置文件里的配置内容
+  @GetMapping("/config-info")
+  public String getConfigInfo(){
+      return configInfo;
+  }
+todo 此时有个问题，当配置中心里配置文件发生内容变化时，客户端除非重启，否则无法实时获取配置文件的最新动态
+4、客户的动态刷新实现
+  1）、添加 spring-boot-starter-actuator 监控依赖
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+  2）、在配置文件中配置监控端点
+     # 配置监控端点
+     management:
+       endpoints:
+         web:
+           exposure:
+             include: "*"  # 监控所有，默认 health，info
+  3）、业务类（控制类）上添加注解：todo @RefreshScope
+      @RestController
+      @RefreshScope
+      @RequestMapping("/client3355")
+      public class ConfigClientController {...}
+  4)、为了使动态刷新配置生效，在配置中心的配置文件做修改后，需要手动向客户端发送如下 post 请求：
+      curl -X POST "http://localhost:3355/actuator/refresh"
+todo 然后，问题又来了，虽然避免了客户端的重启来动态获取配置中心的配置文件内容，但当客户端有很多呢？不可能每一台都发送post请求吧，
+     所以我们需要使用广播通知，用到了消息总线 bus，相见 消息总线.txt
+
+
+
+
+
+

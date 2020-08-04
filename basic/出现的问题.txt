@@ -1,0 +1,23 @@
+1、引入了 Eureka 之后，返回数据从 json 变成了 xml
+   解决方式一：在提供者与消费者 的方法上添加produces=“application/json”
+   解决方法一：去除依赖的包：因为在 eureka-server starter里面带了 format-xml 的包，而在浏览器的请求 accept 中匹配转 xml 在匹配 json 之前
+             <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+                <!-- 去除依赖的包 -->
+                <exclusions>
+                   <exclusion>
+                      <groupId>com.fasterxml.jackson.dataformat</groupId>
+                      <artifactId>jackson-dataformat-xml</artifactId>
+                   </exclusion>
+                </exclusions>
+             </dependency>
+
+2、使用 OpenFeign 进行服务调用，出现 com.netflix.client.ClientException: Load balancer does not have available server for client: xxx 问题
+   解决：需要在客户端（服务消费者）的主配置类中指定服务提供者的地址：服务集群名.ribbon.listOfServers=服务提供者的地址1, 服务提供者的地址2 ...
+       # 指定服务提供者的地址：服务集群名.ribbon.listOfServers=服务提供者的地址1, 服务提供者的地址2 ...
+       cloud-provider-payment-service:
+             ribbon:
+               listOfServers: http://localhost:8001, http://localhost:8002
+
+

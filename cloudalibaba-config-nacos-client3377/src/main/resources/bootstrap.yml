@@ -1,0 +1,21 @@
+# 服务端口号
+server:
+  port: 3377
+
+# 应用名
+spring:
+  application:
+    name: cloud-nacos-config-client
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848  # nacos 作为服务注册中心的地址
+      config:
+        server-addr: 127.0.0.1:8848  # nacos 作为配置中心的地址
+        file-extension: yaml    # 读取的配置文件的格式：yaml 格式的配置
+        namespace: 37c2369c-302b-44c6-850c-c8e7ab61201c  # 命名空间 id，用于读取哪个命名空间下的哪个分组的配置文件
+        group: DEFAULT_GROUP  # 读取哪个分组下的配置文件
+
+
+
+

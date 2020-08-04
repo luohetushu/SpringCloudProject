@@ -1,0 +1,214 @@
+Sentinel：把流量作为切入点，从流量控制、熔断降级、系统负载保护等多个维度保护服务的稳定性
+
+Sentinel 分为两个部分:
+  核心库（Java 客户端）不依赖任何框架/库，能够运行于所有 Java 运行时环境，同时对 Dubbo / Spring Cloud 等框架也有较好的支持。
+  控制台（Dashboard）基于 Spring Boot 开发，打包后可以直接运行，不需要额外的 Tomcat 等应用容器
+
+todo 下载：https://github.com/alibaba/Sentinel/releases
+通过编译的方式：
+1、git clone git@github.com:alibaba/Sentinel.git
+2、cd Sentinel
+3、mvn -Dmaven.test.skip=true clean package   // 编译打包
+4、进入 sentinel-dashboard.jar 所在目录：cd sentinel-dashboard/target
+5、执行 jar 包：java -jar sentinel-dashboard.jar
+6、打开可视化界面：http://127.0.0.1:8080     用户名：sentinel  密码：sentinel
+
+todo 端口冲突
+1、更改 tomcat 端口：http://127.0.0.1:9090
+   cd /Library/apache-tomcat-9.0.35/conf , 更改 server.xml 文件，将端口换成 9090
+   cd /Library/apache-tomcat-9.0.35/bin 更改之后，启动: ./startup.sh  todo 报错：/logs/catalina.out  Permission denied
+              解决：我将 logs 中的文件全部删除，然后再次命令启动，启动成功
+2、杀死 8080 端口的线程：
+   $ lsof -i:8080       // 查看指定端口占用情况
+   COMMAND  PID        USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+   java    1584 murongyunge   46u  IPv6 0xb72359367052dfc3      0t0  TCP *:http-alt (LISTEN)
+   $ kill -9 1584        // 杀死指定线程
+3、启动 sentinel：java -jar sentinel-dashboard.jar
+
+
+todo 使用
+1、服务端：cloudalibaba-sentinel-service8401，使用 sentinel 进行服务降级、服务熔断与服务限流
+   依赖：<!--Sentinel：服务降级、服务熔断、服务限流-->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+        <!--用于 Nacos 持久化配置-->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-nacos</artifactId>
+        </dependency>
+   配置：  # 应用名
+          spring:
+            application:
+              name: cloud-alibaba-sentinel-service   # 多服务集群，有相同的应用名
+            cloud:
+              nacos:
+                discovery:
+                  # nacos 服务注册中心地址
+                  server-addr: 127.0.0.1:8848
+              sentinel:
+                transport:
+                  # 配置 sentinel-dashboard 地址
+                  dashboard: localhost:8080
+                  # 默认8719端口，假如被占用会自动从8719开始依次+1扫描，直至找到未被占用的端口
+                  port: 8719
+todo Sentinel 采用懒加载说明，只有当微服务进行过接口调用请求后才能显示在 sentinel-dashboard 面板上
+
+@SentinelResource 用于定义资源，并提供可选的异常处理和 fallback 配置项。
+@SentinelResource 注解包含以下属性：
+    value：资源名称，必需项（不能为空）
+    entryType：entry 类型，可选项（默认为 EntryType.OUT）
+    blockHandler / blockHandlerClass: blockHandler 对应处理 BlockException 的函数名称，可选项。
+        blockHandler 函数访问范围需要是 public，返回类型需要与原方法相匹配，参数类型需要和原方法相匹配并且最后加一个额外的参数，
+                     类型为 BlockException。
+        blockHandler 函数默认需要和原方法在同一个类中。
+        若希望使用其他类的函数，则可以指定 blockHandlerClass 为对应的类的 Class 对象，注意对应的函数必需为 static 函数，否则无法解析。
+    fallback / fallbackClass：fallback 函数名称，可选项，用于在抛出异常的时候提供 fallback 处理逻辑。
+        fallback 函数可以针对所有类型的异常（除了 exceptionsToIgnore 里面排除掉的异常类型）进行处理。
+        fallback 函数签名和位置要求：
+            返回值类型必须与原函数返回值类型一致；
+            方法参数列表需要和原函数一致，或者可以额外多一个 Throwable 类型的参数用于接收对应的异常。
+        fallback 函数默认需要和原方法在同一个类中。
+        若希望使用其他类的函数，则可以指定 fallbackClass 为对应的类的 Class 对象，注意对应的函数必需为 static 函数，否则无法解析。
+    todo 若 blockHandler 和 fallback 同时配置，则被限流降级抛出 BlockException 时只会进入 blockHandler 处理逻辑
+    defaultFallback（since 1.6.0）：默认的 fallback 函数名称，可选项，通常用于通用的 fallback 逻辑（即可以用于很多服务或方法）。
+        默认 fallback 函数可以针对所有类型的异常（除了 exceptionsToIgnore 里面排除掉的异常类型）进行处理。
+        若同时配置了 fallback 和 defaultFallback，则只有 fallback 会生效。
+        defaultFallback 函数签名要求：
+            返回值类型必须与原函数返回值类型一致；
+            方法参数列表需要为空，或者可以额外多一个 Throwable 类型的参数用于接收对应的异常。
+        defaultFallback 函数默认需要和原方法在同一个类中。
+        若希望使用其他类的函数，则可以指定 fallbackClass 为对应的类的 Class 对象，注意对应的函数必需为 static 函数，否则无法解析。
+    exceptionsToIgnore（since 1.6.0）：用于指定哪些异常被排除掉，不会计入异常统计中，也不会进入 fallback 逻辑中，而是会原样抛出
+
+todo 使用的规则
+1、流控（流量控制）规则：
+  资源名：唯一名称，默认请求路径
+  针对来源：Sentinel可以针对调用者进行限流，填写微服务名，指定对哪个微服务进行限流 ，默认default(不区分来源，全部限制)
+  阈值类型：
+      1、QPS(每秒钟的请求数量)：当调用该接口的 QPS 达到了阈值的时候，进行限流；
+      2、线程数：当调用该接口的线程数达到阈值时，进行限流
+  单机阈值：在 QPS 阈值类型下，代表每秒的访问次数，只要超过该设定的阈值，就会进行限流操作
+           在线程数阈值类型下，代表的是每秒内访问该api接口的线程数，如果该接口的操作时间比较长，当排队的线程数到达阈值的时候，进行限流操作，
+  是否集群：不需要集群
+  流控模式：
+      1、直接：接口达到限流条件时，直接限流
+      2、关联：当关联的资源达到阈值时，就限流自己
+      3、链路：只记录指定链路上的流量（指定资源从入口资源进来的流量，如果达到阈值，就可以限流）[api级别的针对来源]
+  流控效果
+      1、快速失败：直接失败：Blocked by Sentinel (flow limiting)
+                 com.alibaba.csp.sentinel.slots.block.flow.controller.DefaultController
+      2、Warm Up：根据 codeFactor（冷加载因子，默认3）的值，从 阈值 / codeFactor 开始，经过预热时长，慢慢达到设置的 QPS 阈值，
+                 即 QPS 每秒请求次数从 阈值 / 3 开始，经过 预热时长 后逐渐升至设定的 QPS 阈值
+                 com.alibaba.csp.sentinel.slots.block.flow.controller.DefaultController.WarmUpController
+      3、排队等待：严格控制请求通过的间隔时间，即让请求以均匀的速度通过，对应的是漏桶算法
+                 com.alibaba.csp.sentinel.slots.block.flow.controller.DefaultController.RateLimiterController
+2、降级规则
+   通常用以下几种方式来衡量资源是否处于稳定的状态：
+   平均响应时间 (DEGRADE_GRADE_RT)：当 1s 内持续进入 N 个请求，对应时刻的平均响应时间（秒级）均超过阈值（count，以 ms 为单位），
+       那么在接下的时间窗口（DegradeRule 中的 timeWindow，以 s 为单位）之内，对这个方法的调用都会自动地熔断（抛出 DegradeException）。
+       注意 Sentinel 默认统计的 RT 上限是 4900 ms，超出此阈值的都会算作 4900 ms，
+           若需要变更此上限可以通过启动配置项 -Dcsp.sentinel.statistic.max.rt=xxx 来配置。
+   异常比例 (DEGRADE_GRADE_EXCEPTION_RATIO)：当资源的每秒请求量 >= N（可配置），
+       并且每秒异常总数占通过量的比值超过阈值（DegradeRule 中的 count）之后，资源进入降级状态，
+       即在接下的时间窗口（DegradeRule 中的 timeWindow，以 s 为单位）之内，对这个方法的调用都会自动地返回。
+       异常比率的阈值范围是 [0.0, 1.0]，代表 0% - 100%。
+   异常数 (DEGRADE_GRADE_EXCEPTION_COUNT)：当资源近 1 分钟的异常数目超过阈值之后会进行熔断。
+       注意由于统计时间窗口是分钟级别的，若 timeWindow 小于 60s，则结束熔断状态后仍可能再进入熔断状态
+3、热点规则
+   何为热点？热点即经常访问的数据
+   热点参数限流会统计传入参数中的热点参数，并根据配置的限流阈值与模式，对包含热点参数的资源调用进行限流。
+   热点参数限流可以看做是一种特殊的流量控制，仅对包含热点参数的资源调用生效
+   Sentinel 利用 LRU 策略统计最近最常访问的热点参数，结合令牌桶算法来进行参数级别的流控。
+   热点参数限流支持集群模式
+   todo @SentinelResource(value = "testHotKey", fallback = "testHotKeyHandler")  // value: 资源名  fallback：兜底方法
+        使用热点规则，需要自定义熔断"兜底"方法，否则发生熔断时将会显示"error page"
+   todo 参数例外项：给指定热点的参数设置例外参数值，并设置新的熔断阈值，
+        当该参数的值等于该例外值时，其熔断的阈值为新设的阈值，只有达到该新的阈值才会发生熔断
+4、系统规则：
+   Sentinel 的系统规则指从整体维度对应用入口流量进行控制，结合应用的Load、CPU使用率、RT、QPS和并发线程数几个指标，
+              通过自适应的流控规则，让系统的入口流量和系统的负载达到一个平衡
+   入口流量：进入整个应用的流量
+   Load 自适应（仅对 Linux/Unix-like 机器生效）：系统的 load1 作为启发指标，进行自适应系统保护。
+        当系统的 load1 超过某个设定的启发值，且系统当前的并发线程超过估算的系统容量时才会触发系统保护（BBR 阶段）。
+        系统容量由系统的 maxQPS * minRT 估算出。设定参考值一般是 CPU cores * 2.5
+   CPU usage：当系统的 CPU 使用率超过阈值时即触发系统保护
+   平均 RT：当单台机器上所有入口流量的平均 RT 达到阈值即触发系统保护，单位为 毫秒
+   并发线程数：当单台机器上所有入口流量的并发线程数达到阈值即触发系统保护
+   入口 QPS：当单台机器上所有入口流量的 QPS 达到阈值即触发系统保护
+
+todo Sentinel 规则持久化配置
+问题：对某个微服务的资源添加规则后，当微服务重新启动之后，添加的规则就会消失  -- 临时
+解决：将限流配置规则持久化保存进 Nacos 保存，只要刷新微服务某个 rest 地址，sentinel 控制台就能配置规则。
+     只要 Nacos 中配置不删除，针对微服务的 sentinel 限流规则持续有效
+Sentinel 支持以下几种规则：
+    https://github.com/alibaba/Sentinel/wiki/如何使用
+    流量控制规则(FlowRule)、熔断降级规则(DegradeRule)、系统保护规则(SystemRule)、来源访问控制规则(AuthorityRule) 和
+    热点参数规则(ParamFlowRule)
+流量控制规则 (FlowRule) 重要属性：
+Field	            说明	                                                        默认值
+resource	        资源名，资源名是限流规则的作用对象
+count	            限流阈值(单机阈值)
+grade	            限流阈值类型，QPS 模式（1）或并发线程数模式（0）	                QPS 模式
+limitApp	        流控针对的调用来源	                                            default，代表不区分调用来源
+strategy	        调用关系限流策略：直接、关联、链路	                            根据资源本身（直接）
+controlBehavior	    流控效果（直接拒绝/WarmUp/匀速+排队等待），不支持按调用关系限流	    直接拒绝
+clusterMode	        是否集群限流	                                                否
+添加依赖：
+    <!--用于配置规则于 Nacos 持久化配置-->
+    <dependency>
+        <groupId>com.alibaba.csp</groupId>
+        <artifactId>sentinel-datasource-nacos</artifactId>
+    </dependency>
+主配置类添加配置：
+    spring.cloud.sentinel:
+      datasource:
+        ds1:   # 数据源实例1
+          nacos:
+             server-addr: 127.0.0.1:8848
+             dataId: ${spring.application.name}  # 在 Nacos 中添加配置文件时填写的 dataId
+             groupId: DEFAULT_GROUP  # 分组，在 Nacos 中添加配置文件时填写的 groupId
+             data-type: json   # 在 Nacos 中添加配置文件时选择的类型
+             rule-type: flow   # 规则种类
+在 Nacos 中添加配置文件:
+    Data Id: cloud-alibaba-sentinel-service
+    Group: DEFAULT_GROUP
+    配置格式：GSON
+    配置内容：[     // todo 以下配置的是 流控规则
+                 {
+                     "resource" : "/testA",       // 资源名
+                     "limitApp" : "default",      // 来源应用，default，代表不区分调用来源
+                     "grade" : 1,   // 限流阈值类型，QPS 模式（1）或并发线程数模式（0）
+                     "count" : 1,   // 限流阈值(单机阈值)
+                     "strategy" : 0,   // 调用关系限流策略：直接（0）、关联（1）、链路（2）
+                     "controlBehavior" : 0,  // 流控效果（直接拒绝（0）/WarmUp（1）/匀速+排队等待（2）），不支持按调用关系限流
+                     "clusterMode" : false  // 是否集群限流
+                 }
+             ]
+
+
+
+todo Sentinel 中 Ribbon 使用，内嵌 Ribbon
+1、服务注册中心：Nacos 127.0.0.1:8848
+2、服务提供者：cloudalibaba-provider-payment9003
+             cloudalibaba-provider-payment9004
+3、服务消费者：cloudalibaba-consumer-order84
+
+todo Sentinel 使用 OpenFeign
+一般在消费端：服务消费者：cloudalibaba-consumre-order84
+添加依赖：
+     <!--使用 OpenFeign 进行服务调用-->
+     <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-openfeign</artifactId>
+     </dependency>
+在配置文件中开启支持 Feign：
+    # 开启支持 Feign
+    feign:
+      sentinel:
+        enabled: true
+
+
+
+

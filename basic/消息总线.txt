@@ -1,0 +1,66 @@
+在微服务架构的系统中，通常会使用轻量级的消息代理来构建一个共用的消息主题，并让系统中所有微服务实例都连接上来。
+由于该主题中产生的消息会被所有实例监听和消费，所以称之为消息总线
+
+Spring Cloud Bus 消息总线
+    是用来将分布式系统的微服务节点与轻量级消息系统链接起来的框架，整合了 java 的事件处理机制和消息中间件的功能
+    配合 Spring Cloud Config 使用实现分布式自动刷新功能
+
+Bus 支持两种消息代理：RabbitMQ 和 Kafka
+
+todo 工具
+消息中间件：RabbitMQ
+命令启动：rabbitmq-server   // 启动目录：/usr/local/sbin  todo 已在 .bash_profile 中配置
+打开可视化界面：http://localhost:15672  用户名：guest   密码：guest
+
+设计思想：
+一、利用消息总线触发一个客户端 /bus/refresh ，从而刷新所有客户端的配置  --- 不合适
+二、利用消息总线触发一个服务端ConfigServer的/bus/refresh端点，从而刷新所有客户端的配置 --- 更佳
+
+todo 实现
+1、给 配置中心模块：服务端：cloud-config-center3344 添加消息总线支持
+   1)、添加依赖
+       <!--添加消息总线RabbitMQ支持-->
+       <dependency>
+           <groupId>org.springframework.cloud</groupId>
+           <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+       </dependency>
+   2)、主配置文件添加配置：
+       spring:
+         # 配置 RabbitMQ
+         rabbitmq:
+           host: localhost
+           port: 5672
+           username: guest
+           password: guest
+       # 配置监控端点
+       management:
+         endpoints:
+           web:
+             exposure:
+               # 暴露 bus 刷新配置的端点
+               include: "bus-refresh"  # 默认 health，info
+2、给 配置中心模块：客户端：cloud-config-client3355：
+                  客户端：cloud-config-client3366：添加消息总线支持
+  1)、添加依赖
+         <!--添加消息总线RabbitMQ支持-->
+         <dependency>
+             <groupId>org.springframework.cloud</groupId>
+             <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+         </dependency>
+  2)、主配置文件添加配置：
+         spring:
+           # 配置 RabbitMQ
+           rabbitmq:
+             host: localhost
+             port: 5672
+             username: guest
+             password: guest
+3、当配置中心的配置文件发生更改之后，需要手动发送如下 post 请求，从而刷新所有客户端的配置：
+   curl -X POST "http://config-3344.com:3344/actuator/bus-refresh"
+todo 此种广播通知是所有的客户端，那如果只想某个客户端收到通知呢？
+   则发送的请求为：http://{配置中心地址:端口号}/actuator/bus-refresh/{destination} // destination 为指定的客户端应用名:端口号
+   如：http://config-3344.com:3344/actuator/bus-refresh/cloud-client:3355
+
+
+
+

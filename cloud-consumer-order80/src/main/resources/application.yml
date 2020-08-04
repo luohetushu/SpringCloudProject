@@ -1,0 +1,47 @@
+# 服务端口号
+server:
+  port: 8010
+
+# 应用名
+spring:
+  application:
+    name: cloud-consumer-order80-serveice
+  # 配置链路跟踪
+  zipkin:
+    base-url: http://localhost:9411/   # 链路跟踪可视化地址
+  # 配置 sleuth
+  sleuth:
+    sampler:
+      # 采样率，取值 0～1 之间，1 表示全采集
+      probability: 1
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
+# 配置服务治理：客户端：服务消费者Eureka Client
+eureka:
+  client:
+    # 是否将自己注册进注册中心 EurekaServer
+    register-with-eureka: true
+    # 是否从 EurekaServer 检索已有的注册信息，默认 true
+    # 单节点无所谓，集群必须设置为true，配合 ribbon 使用负载均衡
+    fetch-registry: true
+    # 设置注册中心地址
+    service-url:
+      #defaultZone: http://localhost:7001/eureka/  # 注册中心只有一个的情况
+      # 注册中心集群
+      #defaultZone: http://eureka7001.com:7001/eureka/, http://eureka7002.com:7002/eureka/, http://eureka7003.com:7003/eureka/
+      defaultZone: http://eureka7001.com:7001/eureka/
+  instance:
+    #主机名称：服务名称修改
+    instance-id: consumer-order80
+    #访问信息：是否提示 IP 信息
+    prefer-ip-address: true
+
+
+
+

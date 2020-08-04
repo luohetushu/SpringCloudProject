@@ -1,0 +1,119 @@
+为了解决整个系统因单一的后端依赖可能造成的级联故障，对故障和延迟进行隔离和管理，以便单个依赖关系的失败，不能取消整个应用程序或系统
+
+实现技术：
+一、Hystrix : 断路器
+   一个用于处理分布式系统延迟与容错的开源库，在分布式系统里，许多依赖不可避免地会调用失败，比如超时、异常等。
+   Hystrix保证在一个依赖出现问题的情况下不会导致整体服务失败，避免级联故障，以提高分布式系统的弹性
+   原理：当某个服务但也发生故障后，通过断路器的故障监控，向调用方法返回一个符合预期的、可处理的备选响应（FallBack），
+        而不是长时间的等待或者抛出调用方法无法处理的异常
+   重要概念：
+      服务降级 fallback：服务器忙，请稍后再试，不让客户端等待并立刻返回一个友好提示——fallback
+           触发情况：程序运行异常：RuntimeException
+                    超时：feign 超时请求等
+                    服务熔断触发服务降级
+                    线程池/信号量打满也会导致服务降级
+      服务熔断 break：达到最大服务访问后，直接拒绝访问，并调用服务降级的方法返回友好提示
+                     服务的降级 -> 进而服务熔断 -> 进而恢复调用链路
+                     当某个微服务出错不可用或响应时间太长时，会进行服务的降级，进而熔断该节点微服务的调用，快速返回错误的响应信息。
+                     todo 当检测到该节点微服务调用响应正常后，恢复调用链路
+      服务限流 flowlimit：秒杀高并发等操作，限量处理请求，多次有序进行
+   如何解决？解决要求：
+      超时导致服务器变慢---超时不再等待
+      出错（宕机或程序运行出错）---出差要有兜底
+      解决：提供者服务超时，调用者不能一直卡死等待，必须有服务降级
+           提供者服务宕机，调用者不能一直卡死等待，必须有服务降级
+           提供者服务OK，但调用者自己出故障或者有自我要求（如等待时间小于服务处理时间），自己处理降级
+
+todo 使用
+1、依赖：
+  <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+  </dependency>
+2、服务降级：
+   1）、服务提供者自身有服务降级：
+       设置自身调用超时时间的峰值，峰值内可以正常运行；超过了需要有兜底的方法处理，作为服务降级的 fallback
+       降级配置：@HystrixCommand
+          在业务类处理请求的方法上添加注解：
+              @HystrixCommand(fallbackMethod = "paymentTimeoutHandler", commandProperties = {
+                          // 当前线程处理该请求的峰值时间，该时间内正常运行，超过该时间进行兜底方法调用
+                          @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "3000")
+                  })
+              todo 使用该注解后，当前处理请求的方法超时或者出错，都会进行服务降级，从而调用兜底方法：paymentTimeoutHandler
+                   对 @HystrixCommand 中的修改，建议重启微服务，热部署可能不会生效
+          同时定义兜底方法：public String paymentTimeoutHandler(Integer id){...}
+          在主启动类进行激活：@EnableCircuitBreaker    // 用于激活服务降级与服务熔断
+   2）、服务消费者自身有服务降级：
+        在主配置类中开启 Hystrix 熔断器：feign.hystrix.enabled: true  # 开启 Hystrix 熔断器: 进行服务降级或服务熔断
+        在主启动类上激活 Hystrix：todo @EnableHystrix          // 激活Hystrix，用于服务降级与服务熔断
+        在业务类处理请求的方法上添加注解：
+              @HystrixCommand(fallbackMethod = "paymentTimeoutHandler", commandProperties = {
+                          // 当前线程处理该请求的峰值时间，该时间内正常运行，超过该时间进行兜底方法调用
+                          @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "1500")
+                  })
+        同时定义兜底方法：public String paymentTimeoutHandler(Integer id){...}
+        todo 此时出现的问题：一个方法对应一个兜底方法，会造成代码膨胀，且与业务逻辑混合，造成混乱
+             解决：创建全局的，或者默认的兜底方法
+        在业务控制类上添加通用注解：@DefaultProperties(defaultFallback = "defaultPaymentHandler") // 指定通用兜底方法
+    或者创建一个兜底方法处理类，实现 @FeignClient 服务接口，为每一个服务调用方法实现一个兜底方法
+        @FeignClient 服务接口：
+            @Component
+            @FeignClient(value = "CLOUD-PROVIDER-HYSTRIX-PAYMENT-SERVICE", fallback = HystrixHandlerService.class)
+            public interface PaymentHystrixService {
+                @GetMapping("/payment8001/success/{id}")
+                public String paymentSuccess(@PathVariable("id") Integer id);
+                @GetMapping("/payment8001/timeout/{id}")
+                public String paymentTimeOut(@PathVariable("id") Integer id);
+            }
+        兜底处理类：
+            @Component
+            public class HystrixHandlerService implements PaymentHystrixService {
+                @Override
+                public String paymentSuccess(Integer id) {
+                    return "我是成功方法的兜底方法，当对方服务超时或宕机，或双方出错，我就会被触发，id = " + id;
+                }
+                @Override
+                public String paymentTimeOut(Integer id) {
+                    return "我是超时方法的兜底方法，当对方服务超时或宕机，或双方出错，我就会被触发，id = " + id;
+                }
+            }
+3、服务熔断：熔断机制的注解@HystrixCommand
+   Hystrix 会监控微服务间调用的状况，当失败的调用达到一定的阈值（默认是10秒内20次调用中50%以上调用失败），启动熔断机制。
+   1）、服务提供者自身实现服务熔断：
+       在业务类处理请求的方法上添加注解：
+           @HystrixCommand(fallbackMethod = "paymentCircuitBreakerHandler", commandProperties = {
+                   @HystrixProperty(name = "circuitBreaker.enabled", value = "true"), // 是否开启熔断机制
+                   @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),  // 一定时间内的请求次数阈值
+                   @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "10000"), // 一定的时间（时间窗口期）
+                   @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "60")   // 错误请求次数百分比
+           })
+       //当该注解的请求方法一定时间内多次地超时或异常等服务降级行为，就会触发服务熔断（即使正常请求也会出现服务降级行为），随后过一段的时间窗口期，请求慢慢恢复
+       服务熔断开启条件：当一定的时间内（默认最近10秒），请求次数达到阈值（默认20次），且错误请求次数百分比超过50%（默认），就会开启熔断机制
+                       次数服务请求即使正常也是出现服务降级行为，即调用 fallback 方法
+       服务熔断关闭条件：服务熔断开启后，经过一定的时间窗口期，释放一次请求，如果正常，则恢复调用链路；如果依然有误，则时间窗口期重新计时
+4、图形化 Dashboard 搭建：准实时地调用监控，监控对象为微服务提供者（需要有依赖 actuator 和添加 @Bean ServletRegistrationBean）
+   1）、客户端：仪表盘9001：cloud-consumer-hystrix-dashboard9001
+       依赖：
+          <!--图形化 Hystrix Dashboard -->
+          <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-netflix-hystrix-dashboard -->
+          <dependency>
+              <groupId>org.springframework.cloud</groupId>
+              <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+          </dependency>
+       激活：主启动类：todo @EnableHystrixDashboard   // 激活图形化 Hystrix Dashboard
+       打开图形化界面：http://localhost:9001/hystrix
+   2）、监控微服务端：cloud-provider-hystrix-payment8001
+       添加Bean：ServletRegistrationBean
+          @Bean
+          public ServletRegistrationBean getServlet() {
+              HystrixMetricsStreamServlet streamServlet = new HystrixMetricsStreamServlet() ;
+              ServletRegistrationBean registrationBean = new ServletRegistrationBean(streamServlet);
+              registrationBean.setLoadOnStartup(1);
+              registrationBean.addUrlMappings("/hystrix.stream");
+              registrationBean.setName("HystrixMetricsStreamServlet");
+              return  registrationBean;
+          }
+       在图形界面监控指定微服务：
+           http://localhost:8001/hystrix.stream
+           设置延迟与标题
+

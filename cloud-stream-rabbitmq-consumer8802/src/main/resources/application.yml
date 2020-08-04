@@ -1,0 +1,64 @@
+# 服务端口号
+server:
+  port: 8802
+
+spring:
+  # 应用名
+  application:
+    name: cloud-stream-consumer
+  cloud:
+    # 配置 stream 消息驱动
+    stream:
+      # 绑定器
+      binders:
+        # 配置要绑定的 rabbitmq 的服务信息
+        defaultRabbit: # 表示定义的绑定器的名称，用于与 binding 整合
+          type: rabbit  # 消息中间件类型
+          enviroment:  # 设置 rabbit 相关环境配置
+            spring:
+              rabbitmq:
+                host: localhost
+                port: 5672
+                username: guest
+                password: guest
+      # 服务的整合处理
+      bindings:
+        input: # 定义的通道名称
+          destination: studyExchange # 定义的 exchange 名称
+          content-type: application/json  # 定义消息的类型，json；文本则为 text/plain
+          binder: defaultRabbit # 关联具体的绑定器
+          # 设置消息分组，不同的组是可以全面消费的（重复消费）；同一组内会发生竞争关系，只有其中一个可以消费
+          #group: stream-consumer8802
+          group: stream-consumer
+
+
+
+# 配置服务治理：客户端：服务提供者Eureka Client
+eureka:
+  client:
+    # 是否将自己注册进注册中心 EurekaServer
+    register-with-eureka: true
+    # 是否从 EurekaServer 检索已有的注册信息，默认 true
+    # 单节点无所谓，集群必须设置为true，配合 ribbon 使用负载均衡
+    fetch-registry: true
+    # 设置注册中心地址
+    service-url:
+      #defaultZone: http://localhost:7001/eureka/
+      # 注册中心集群
+      #defaultZone: http://eureka7001.com:7001/eureka/, http://eureka7002.com:7002/eureka/, http://eureka7003.com:7003/eureka/
+      defaultZone: http://eureka7001.com:7001/eureka/
+  instance:
+    #主机名称：服务名称修改
+    instance-id: cloud-stream-consumer8802
+    #访问信息：是否提示 IP 信息
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 5  # 向服务端(注册中心)发送心跳时间间隔，单位为秒，默认30秒
+    lease-expiration-duration-in-seconds: 10 # 服务端(注册中心)在收到最后一次心跳等待时间上限，单位为秒，默认90秒，超时将移除服务
+
+# 设置日志记录级别：trace < debug < info < warn < error
+logging:
+  level:
+    com:
+      springcloud:
+        project: debug
+
